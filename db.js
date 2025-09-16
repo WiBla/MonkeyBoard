@@ -60,12 +60,12 @@ class DB {
 		await this.db.close();
 	}
 
-	async addUser(uid, name, discordId) {
+	async addUser(uid, name, discordId, apeKey) {
 		const insertStmt = await this.db.prepare(`
     INSERT INTO users (
-      uid, name, discordId
+      uid, name, discordId, apeKey
     )
-    VALUES (?, ?, ?)
+    VALUES (?, ?, ?, ?)
     ON CONFLICT(uid) DO UPDATE SET
     uid = excluded.uid,
     name = excluded.name,
@@ -73,7 +73,7 @@ class DB {
   `);
 
 		try {
-			await insertStmt.run(uid, name, discordId);
+			await insertStmt.run(uid, name, discordId, apeKey);
 		} catch (error) {
 			console.error(error);
 		} finally {

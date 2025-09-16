@@ -7,6 +7,7 @@ import {
 	MessageComponentTypes,
 	verifyKeyMiddleware,
 } from "discord-interactions";
+import { RegisterUser } from "./utils.js";
 
 // Create an express app
 const app = express();
@@ -55,13 +56,45 @@ app.post(
 				const ApeKey = data?.options?.[0];
 				console.log({ userId, data, ApeKey });
 
-				let content = "";
+				let components = [];
 
 				if (ApeKey?.value === undefined) {
-					content =
-						"Pour lier votre compte monkeytype au serveur, suivez les instructions suivantes :";
+					components = [
+						{
+							type: MessageComponentTypes.TEXT_DISPLAY,
+							content:
+								"Veuillez générer une ApeKey pour nous aider à tracker vos scores :",
+						},
+						{
+							type: MessageComponentTypes.MEDIA_GALLERY,
+							items: [
+								{ media: { url: "https://i.imgur.com/d2f3mgG.png" } },
+								{ media: { url: "https://i.imgur.com/VBdpHla.png" } },
+								{ media: { url: "https://i.imgur.com/bQFU9a4.png" } },
+								{ media: { url: "https://i.imgur.com/S8b5z2y.png" } },
+							],
+						},
+						{
+							type: MessageComponentTypes.TEXT_DISPLAY,
+							content: `1. Allez sur monkeytype.com, mettez la souris sur votre profile
+2. Une liste apparaît, cliquez sur "Account settings" (paramètres de compte)
+3. Dans le menu qui apparaît, accédez à la section "ape keys"
+4. Cliquez sur "generate new key"
+5. Donnez-lui un nom reconnaîssable, dans cet exemple "CTC-WPM"
+6. Copiez le contenu de la boîte de dialogue qui apparaît, ceci est votre clé d'authentification. Gardez la secrète !
+7. Pensez à activer votre clé fraîchement généré
+8. Retapez la commande /register mais indiquez votre clé obtenu à l'étape 6 à la suite du message`,
+						},
+					];
 				} else {
-					content = "Nous avons bien lié votre compte !";
+					await RegisterUser(ApeKey.value);
+
+					components = [
+						{
+							type: MessageComponentTypes.TEXT_DISPLAY,
+							content: "Votre compte à bien été enregistré !",
+						},
+					];
 				}
 
 				return res.send({
@@ -70,12 +103,7 @@ app.post(
 						flags:
 							InteractionResponseFlags.EPHEMERAL |
 							InteractionResponseFlags.IS_COMPONENTS_V2,
-						components: [
-							{
-								type: MessageComponentTypes.TEXT_DISPLAY,
-								content,
-							},
-						],
+						components,
 					},
 				});
 			}

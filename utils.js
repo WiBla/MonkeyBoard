@@ -1,4 +1,6 @@
 import "dotenv/config";
+import db from "./db.js";
+import Monkey from "./monkey.js";
 
 export async function DiscordRequest(endpoint, options) {
 	// append endpoint to root API URL
@@ -37,4 +39,26 @@ export async function InstallGlobalCommands(appId, commands) {
 	}
 
 	console.log("Commands installed successfully");
+}
+
+export async function RegisterUser(discordId, apeKey) {
+	Monkey.setKey(apeKey);
+
+	try {
+		// Check if key is valid and allows us to get their Monkeytype uid
+		const lastResult = await Monkey.getLastResult();
+
+		if (!!lastResult.uid) throw new Error("User ID not found");
+
+		const profile = await Monkey.getProfile(lastResult.uid);
+
+		if (!!profile.name) throw new Error("Profile name not found");
+
+		await db.addUser(profile.uid, profile.name, discordId, apeKey);
+		console.log("User registered successfully");
+	} catch (err) {
+		console.error("Failed to register user:", err.message);
+	} finally {
+		Monkey.deleteKey();
+	}
 }

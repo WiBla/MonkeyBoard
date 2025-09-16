@@ -19,7 +19,7 @@ const REGISTER_COMMAND = {
 		{
 			type: 3,
 			name: "apekey",
-			description: "Votre ApeKey disponible depuis le site",
+			description: "Une clé d'authentification généré depuis le site",
 			required: false,
 		},
 	],
