@@ -1,6 +1,5 @@
 import sqlite3 from "sqlite3";
 import { open } from "sqlite";
-
 class DB {
 	constructor() {
 		this.initDB();
@@ -62,6 +61,14 @@ class DB {
 		console.log("[DB] Closed");
 	}
 
+	async getFirstUser() {
+		try {
+			return this.db.get("SELECT * from users where 1 limit 1");
+		} catch (error) {
+			console.error("[DB]", error);
+		}
+	}
+
 	async addUser(uid, name, discordId, apeKey) {
 		const insertStmt = await this.db.prepare(`
     INSERT INTO users (
@@ -83,7 +90,7 @@ class DB {
 		}
 	}
 
-	async addTag(tags, uid) {
+	async addTags(tags, uid) {
 		const insertStmt = await this.db.prepare(`
       INSERT INTO tags (
         id, name, uid
@@ -96,7 +103,9 @@ class DB {
     `);
 
 		for (const tag of tags) {
-			await insertStmt.run(tag.id, tag.name, uid);
+			// console.debug({ tag });
+
+			await insertStmt.run(tag._id, tag.name, uid);
 		}
 
 		await insertStmt.finalize();

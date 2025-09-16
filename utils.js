@@ -100,3 +100,23 @@ export async function RegisterUser(discordId, apeKey) {
 		return success;
 	}
 }
+
+export async function switchUser() {
+	try {
+		const user = await db.getFirstUser();
+		Monkey.setToken(user.apekey);
+		return user;
+	} catch (err) {
+		console.error("[utils] Cannot switch user", err);
+	}
+}
+
+export async function GetTags() {
+	try {
+		const user = await switchUser();
+		const tags = await Monkey.getTags();
+		db.addTags(tags, user.uid);
+	} catch (err) {
+		console.error("[utils] Cannot get tags", err);
+	}
+}

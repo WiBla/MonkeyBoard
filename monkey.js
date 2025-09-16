@@ -2,7 +2,6 @@ class Monkey {
 	constructor() {
 		this.API_URL = "https://api.monkeytype.com";
 		this.headers = undefined;
-		this.uid = null;
 	}
 
 	/**
@@ -50,13 +49,11 @@ class Monkey {
 
 	/**
 	 * Fetch user profile by UID
-	 * Stores UID internally for later calls.
 	 */
 	async getProfileByID(uid) {
 		try {
 			const json = await this.get(`/users/${uid}/profile?isUid=true`);
 			const data = json?.data ?? {};
-			this.uid = data.uid ?? null;
 			return data;
 		} catch (err) {
 			console.error("[Monkey] Failed to fetch profile:", err.message);
@@ -66,13 +63,11 @@ class Monkey {
 
 	/**
 	 * Fetch user profile by username
-	 * Stores UID internally for later calls.
 	 */
 	async getProfileByUsername(username) {
 		try {
 			const json = await this.get(`/users/${username}/profile`);
 			const data = json?.data ?? {};
-			this.uid = data.uid ?? null;
 			return data;
 		} catch (err) {
 			console.error("[Monkey] Failed to fetch profile:", err.message);
@@ -81,14 +76,9 @@ class Monkey {
 	}
 
 	/**
-	 * Fetch user tags. Requires UID to be set.
+	 * Fetch user tags.
 	 */
 	async getTags() {
-		if (!this.uid) {
-			console.error("[Monkey] UID not set. Fetch profile first.");
-			return {};
-		}
-
 		try {
 			const json = await this.get("/users/tags");
 			return json?.data ?? {};

@@ -7,7 +7,7 @@ import {
 	MessageComponentTypes,
 	verifyKeyMiddleware,
 } from "discord-interactions";
-import { buildResponse, RegisterUser } from "./utils.js";
+import { buildResponse, GetTags, RegisterUser } from "./utils.js";
 
 const app = express();
 const PORT = process.env.PORT || 3000;
