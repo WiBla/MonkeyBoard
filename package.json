@@ -1,7 +1,7 @@
 {
 	"name": "ctc-wpm",
 	"private": true,
-	"version": "1.2.0",
+	"version": "1.3.0",
 	"description": "A simple bot that keeps track of you best wpm for the CTC discord server",
 	"main": "app.js",
 	"type": "module",

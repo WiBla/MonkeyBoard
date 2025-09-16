@@ -1,27 +1,17 @@
 import "dotenv/config";
 import express from "express";
 import {
-	ButtonStyleTypes,
 	InteractionResponseFlags,
 	InteractionResponseType,
 	InteractionType,
 	MessageComponentTypes,
 	verifyKeyMiddleware,
 } from "discord-interactions";
-import { getRandomEmoji, DiscordRequest } from "./utils.js";
-import { getShuffledOptions, getResult } from "./game.js";
 
 // Create an express app
 const app = express();
-// Get port, or default to 3000
 const PORT = process.env.PORT || 3000;
-// To keep track of our active games
-const activeGames = {};
 
-/**
- * Interactions endpoint URL where Discord will send HTTP requests
- * Parse request body and verifies incoming requests using discord-interactions package
- */
 app.post(
 	"/interactions",
 	verifyKeyMiddleware(process.env.PUBLIC_KEY),
@@ -53,8 +43,37 @@ app.post(
 						components: [
 							{
 								type: MessageComponentTypes.TEXT_DISPLAY,
-								// Fetches a random emoji to send from a helper function
-								content: `hello world ${getRandomEmoji()}`,
+								content: `hello world !`,
+							},
+						],
+					},
+				});
+			}
+
+			if (name === "register") {
+				const userId = req.body.member.user.id; // This assumes the bot never runs in a DM
+				const ApeKey = data?.options?.[0];
+				console.log({ userId, data, ApeKey });
+
+				let content = "";
+
+				if (ApeKey?.value === undefined) {
+					content =
+						"Pour lier votre compte monkeytype au serveur, suivez les instructions suivantes :";
+				} else {
+					content = "Nous avons bien lié votre compte !";
+				}
+
+				return res.send({
+					type: InteractionResponseType.CHANNEL_MESSAGE_WITH_SOURCE,
+					data: {
+						flags:
+							InteractionResponseFlags.EPHEMERAL |
+							InteractionResponseFlags.IS_COMPONENTS_V2,
+						components: [
+							{
+								type: MessageComponentTypes.TEXT_DISPLAY,
+								content,
 							},
 						],
 					},
