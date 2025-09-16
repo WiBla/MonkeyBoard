@@ -54,10 +54,12 @@ class DB {
     `);
 
 		this.db = db;
+		console.log("[DB] Ready");
 	}
 
 	async close() {
 		await this.db.close();
+		console.log("[DB] Closed");
 	}
 
 	async addUser(uid, name, discordId, apeKey) {
@@ -75,7 +77,7 @@ class DB {
 		try {
 			await insertStmt.run(uid, name, discordId, apeKey);
 		} catch (error) {
-			console.error(error);
+			console.error("[DB]", error);
 		} finally {
 			await insertStmt.finalize();
 		}
@@ -98,17 +100,18 @@ class DB {
 		}
 
 		await insertStmt.finalize();
+		console.log("[DB] Tag(s) added");
 	}
 
 	async addResults(results) {
-		const insertStmt = await db.prepare(`
+		const insertStmt = await this.db.prepare(`
     INSERT INTO results (
-      _id, uid, wpm, rawWpm, charStats, acc, mode, mode2, timestamp,
+      id, uid, wpm, rawWpm, charStats, acc, mode, mode2, timestamp,
       restartCount, incompleteTestSeconds, testDuration, tags,
       consistency, keyConsistency, language
     )
     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-    ON CONFLICT(_id) DO UPDATE SET
+    ON CONFLICT(id) DO UPDATE SET
       uid = excluded.uid,
       wpm = excluded.wpm,
       rawWpm = excluded.rawWpm,
@@ -128,7 +131,7 @@ class DB {
 
 		for (const result of results) {
 			await insertStmt.run(
-				result._id,
+				result.id,
 				result.uid,
 				result.wpm,
 				result.rawWpm,
@@ -143,12 +146,12 @@ class DB {
 				JSON.stringify(result.tags ?? []),
 				result.consistency,
 				result.keyConsistency,
-				result.language
+				result.language,
 			);
 		}
 
 		await insertStmt.finalize();
-		console.log("Database updated successfully.");
+		console.log("[DB] Result(s) added");
 	}
 }
 

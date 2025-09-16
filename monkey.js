@@ -7,19 +7,26 @@ class Monkey {
 
 	/**
 	 * Set the API key for authentication.
-	 * @param {string} token - Monkeytype API token.
+	 * Token must be in the expected Base64-like format.
+	 * @param {string} token - Raw token string.
 	 */
-	setKey(token) {
+	setToken(token) {
+		// const tokenPattern = /^NjhjOT[A-Za-z0-9\-_]+kY2Q1YzQyNmZlM[A-Za-z0-9\-_]+$/;
+		const tokenPattern = /^[A-Za-z0-9\-_]{60,}$/;
+
+		if (typeof token !== "string" || !tokenPattern.test(token))
+			throw new Error("[Monkey] Invalid token format.");
+
 		this.headers = { Authorization: `ApeKey ${token}` };
-		console.log("[monkey.js] API key set");
+		console.log("[Monkey] API key set");
 	}
 
 	/**
 	 * Delete the stored API key.
 	 */
-	deleteKey() {
+	deleteToken() {
 		this.headers = undefined;
-		console.log("[monkey.js] API key deleted");
+		console.log("[Monkey] API key deleted");
 	}
 
 	/**
@@ -27,27 +34,48 @@ class Monkey {
 	 * @param {string} path - API path to fetch.
 	 */
 	async get(path) {
+		if (!this.headers) {
+			console.error("[Monkey] No API token set. Use setKey() first.");
+			throw new Error("Unauthorized: API token not set");
+		}
+
 		try {
 			const res = await fetch(this.API_URL + path, { headers: this.headers });
 			return res.json();
 		} catch (err) {
-			console.error("[monkey.js] Request error:", err.message);
+			console.error("[Monkey] Request error:", err.message);
 			throw err;
 		}
 	}
 
 	/**
-	 * Fetch user profile by UID or username.
+	 * Fetch user profile by UID
 	 * Stores UID internally for later calls.
 	 */
-	async getProfile(uidOrName) {
+	async getProfileByID(uid) {
 		try {
-			const json = await this.get(`/users/${uidOrName}/profile?isUid=true`);
+			const json = await this.get(`/users/${uid}/profile?isUid=true`);
 			const data = json?.data ?? {};
 			this.uid = data.uid ?? null;
 			return data;
 		} catch (err) {
-			console.error("[monkey.js] Failed to fetch profile:", err.message);
+			console.error("[Monkey] Failed to fetch profile:", err.message);
+			return {};
+		}
+	}
+
+	/**
+	 * Fetch user profile by username
+	 * Stores UID internally for later calls.
+	 */
+	async getProfileByUsername(username) {
+		try {
+			const json = await this.get(`/users/${username}/profile`);
+			const data = json?.data ?? {};
+			this.uid = data.uid ?? null;
+			return data;
+		} catch (err) {
+			console.error("[Monkey] Failed to fetch profile:", err.message);
 			return {};
 		}
 	}
@@ -57,7 +85,7 @@ class Monkey {
 	 */
 	async getTags() {
 		if (!this.uid) {
-			console.error("[monkey.js] UID not set. Fetch profile first.");
+			console.error("[Monkey] UID not set. Fetch profile first.");
 			return {};
 		}
 
@@ -65,25 +93,26 @@ class Monkey {
 			const json = await this.get("/users/tags");
 			return json?.data ?? {};
 		} catch (err) {
-			console.error("[monkey.js] Failed to fetch tags:", err.message);
+			console.error("[Monkey] Failed to fetch tags:", err.message);
 			return {};
 		}
 	}
 
 	/**
-	 * Fetch results after a fixed timestamp.
-	 * Adjust timestamp as needed.
+	 * Fetch results after a given timestamp.
+	 * @param {number|null} timestamp - Unix timestamp in ms. If null, fetches up to 1000 results.
 	 */
-	async getResults() {
+	async getResults(timestamp = null) {
+		const query = timestamp ? `?onOrAfterTimestamp=${timestamp}` : "";
 		try {
-			const json = await this.get("/results?onOrAfterTimestamp=1736290800000");
+			const json = await this.get(`/results${query}`);
 			const results = json?.data ?? [];
 			if (results.length === 0) {
-				console.log("[monkey.js] No results returned from API");
+				console.log("[Monkey] No results returned from API");
 			}
 			return results;
 		} catch (err) {
-			console.error("[monkey.js] Failed to fetch results:", err.message);
+			console.error("[Monkey] Failed to fetch results:", err.message);
 			return [];
 		}
 	}
@@ -96,11 +125,11 @@ class Monkey {
 			const json = await this.get("/results/last");
 			const results = json?.data ?? [];
 			if (results.length === 0) {
-				console.log("[monkey.js] No last result found");
+				console.log("[Monkey] No last result found");
 			}
 			return results;
 		} catch (err) {
-			console.error("[monkey.js] Failed to fetch last result:", err.message);
+			console.error("[Monkey] Failed to fetch last result:", err.message);
 			return [];
 		}
 	}

@@ -1,13 +1,21 @@
 import "dotenv/config";
 import db from "./db.js";
 import Monkey from "./monkey.js";
+import {
+	InteractionResponseFlags,
+	InteractionResponseType,
+} from "discord-interactions";
+
+function getStartOfMonthTimestamp() {
+	const now = new Date();
+	const firstDayOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+	return firstDayOfMonth.getTime();
+}
 
 export async function DiscordRequest(endpoint, options) {
-	// append endpoint to root API URL
 	const url = "https://discord.com/api/v10/" + endpoint;
-	// Stringify payloads
 	if (options.body) options.body = JSON.stringify(options.body);
-	// Use fetch to make requests
+
 	const res = await fetch(url, {
 		headers: {
 			Authorization: `Bot ${process.env.DISCORD_TOKEN}`,
@@ -17,13 +25,13 @@ export async function DiscordRequest(endpoint, options) {
 		},
 		...options,
 	});
-	// throw API errors
+
 	if (!res.ok) {
 		const data = await res.json();
 		console.log(res.status);
 		throw new Error(JSON.stringify(data));
 	}
-	// return original response
+
 	return res;
 }
 
@@ -38,27 +46,57 @@ export async function InstallGlobalCommands(appId, commands) {
 		console.error(err);
 	}
 
-	console.log("Commands installed successfully");
+	console.log("[utils] Commands installed successfully");
+}
+
+export function buildResponse({
+	type = InteractionResponseType.CHANNEL_MESSAGE_WITH_SOURCE,
+	flags,
+	components,
+}) {
+	// Add component V2 by default
+	flags |= InteractionResponseFlags.IS_COMPONENTS_V2;
+
+	return {
+		type,
+		data: {
+			flags,
+			components,
+		},
+	};
 }
 
 export async function RegisterUser(discordId, apeKey) {
-	Monkey.setKey(apeKey);
+	let success = false;
 
 	try {
+		Monkey.setToken(apeKey);
+
 		// Check if key is valid and allows us to get their Monkeytype uid
 		const lastResult = await Monkey.getLastResult();
+		if (!lastResult?.uid) throw new Error("Cannot get last result");
+		console.log("[utils] Done fetching last results");
 
-		if (!!lastResult.uid) throw new Error("User ID not found");
+		// Get user's username
+		const profile = await Monkey.getProfileByID(lastResult.uid);
+		if (!profile?.name) throw new Error("Cannot get profile");
+		console.log("[utils] Done fetching user profile");
 
-		const profile = await Monkey.getProfile(lastResult.uid);
-
-		if (!!profile.name) throw new Error("Profile name not found");
-
+		// Save user to DB
 		await db.addUser(profile.uid, profile.name, discordId, apeKey);
-		console.log("User registered successfully");
+		console.log("[utils] Done saving user to DB");
+
+		// Get user's results since start of month & save them
+		const results = await Monkey.getResults(getStartOfMonthTimestamp());
+		await db.addResults(results);
+		console.log("[utils] Done saving user's results from the current month");
+
+		success = true;
+		console.log("[utils] User registered successfully");
 	} catch (err) {
-		console.error("Failed to register user:", err.message);
+		console.error("[utils] Error while registering user:", err.message);
 	} finally {
-		Monkey.deleteKey();
+		Monkey.deleteToken();
+		return success;
 	}
 }
