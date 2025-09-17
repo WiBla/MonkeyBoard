@@ -1,0 +1,10 @@
+{
+	"folders": [
+		{
+			"path": ".."
+		}
+	],
+	"settings": {
+		"javascript.preferences.importModuleSpecifierEnding": "js",
+	}
+}

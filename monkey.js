@@ -1,128 +1,157 @@
+import { API } from "./app.js";
+
 class Monkey {
-	constructor() {
-		this.API_URL = "https://api.monkeytype.com";
-		this.headers = undefined;
-	}
+  constructor() {
+    this.API_URL = "https://api.monkeytype.com";
+    this.headers = undefined;
+  }
 
-	/**
-	 * Set the API key for authentication.
-	 * Token must be in the expected Base64-like format.
-	 * @param {string} token - Raw token string.
-	 */
-	setToken(token) {
-		// const tokenPattern = /^NjhjOT[A-Za-z0-9\-_]+kY2Q1YzQyNmZlM[A-Za-z0-9\-_]+$/;
-		const tokenPattern = /^[A-Za-z0-9\-_]{60,}$/;
+  /**
+   * Set the API key for authentication.
+   * Token must be in the expected Base64-like format.
+   * @param {string} token - Raw token string.
+   */
+  setToken(token) {
+    const tokenPattern = /^[A-Za-z0-9\-_]{76}$/;
 
-		if (typeof token !== "string" || !tokenPattern.test(token))
-			throw new Error("[Monkey] Invalid token format.");
+    if (typeof token !== "string" || !tokenPattern.test(token))
+      throw new Error("[Monkey] Invalid token format.");
 
-		this.headers = { Authorization: `ApeKey ${token}` };
-		console.log("[Monkey] API key set");
-	}
+    this.headers = { Authorization: `ApeKey ${token}` };
+    console.log("[Monkey] API key set");
+  }
 
-	/**
-	 * Delete the stored API key.
-	 */
-	deleteToken() {
-		this.headers = undefined;
-		console.log("[Monkey] API key deleted");
-	}
+  /**
+   * Delete the stored API key.
+   */
+  deleteToken() {
+    this.headers = undefined;
+    console.log("[Monkey] API key deleted");
+  }
 
-	/**
-	 * Perform a GET request with proper error handling.
-	 * @param {string} path - API path to fetch.
-	 */
-	async get(path) {
-		if (!this.headers) {
-			console.error("[Monkey] No API token set. Use setKey() first.");
-			throw new Error("Unauthorized: API token not set");
-		}
+  /**
+   * Verifies that the ApeKey is valid / active
+   * @returns {boolean}
+   */
+  async isKeyValid() {
+    if (!this.headers) {
+      console.error("[Monkey] No API token set. Use setToken() first.");
+      return false;
+    }
 
-		try {
-			const res = await fetch(this.API_URL + path, { headers: this.headers });
-			return res.json();
-		} catch (err) {
-			console.error("[Monkey] Request error:", err.message);
-			throw err;
-		}
-	}
+    try {
+      const res = await API.get(this.API_URL + "/psas", {
+        headers: this.headers,
+      });
 
-	/**
-	 * Fetch user profile by UID
-	 */
-	async getProfileByID(uid) {
-		try {
-			const json = await this.get(`/users/${uid}/profile?isUid=true`);
-			const data = json?.data ?? {};
-			return data;
-		} catch (err) {
-			console.error("[Monkey] Failed to fetch profile:", err.message);
-			return {};
-		}
-	}
+      // TODO mettre à jour la BDD en fonction du résultat
+      if (res.status === 200) return true;
+      if (res.status === 471)
+        console.error(
+          "[Monkey] ApeKey is inactive",
+          this.headers.Authorization,
+        );
 
-	/**
-	 * Fetch user profile by username
-	 */
-	async getProfileByUsername(username) {
-		try {
-			const json = await this.get(`/users/${username}/profile`);
-			const data = json?.data ?? {};
-			return data;
-		} catch (err) {
-			console.error("[Monkey] Failed to fetch profile:", err.message);
-			return {};
-		}
-	}
+      return false;
+    } catch (err) {
+      console.error("[Monkey] Request error:", err.message);
+      return false;
+    }
+  }
 
-	/**
-	 * Fetch user tags.
-	 */
-	async getTags() {
-		try {
-			const json = await this.get("/users/tags");
-			return json?.data ?? {};
-		} catch (err) {
-			console.error("[Monkey] Failed to fetch tags:", err.message);
-			return {};
-		}
-	}
+  /**
+   * Perform a GET request with proper error handling.
+   * @param {string} path - API path to fetch.
+   */
+  async get(path) {
+    if (!this.headers) {
+      console.error("[Monkey] No API token set. Use setToken() first.");
+      throw new Error("Unauthorized: API token not set");
+    }
 
-	/**
-	 * Fetch results after a given timestamp.
-	 * @param {number|null} timestamp - Unix timestamp in ms. If null, fetches up to 1000 results.
-	 */
-	async getResults(timestamp = null) {
-		const query = timestamp ? `?onOrAfterTimestamp=${timestamp}` : "";
-		try {
-			const json = await this.get(`/results${query}`);
-			const results = json?.data ?? [];
-			if (results.length === 0) {
-				console.log("[Monkey] No results returned from API");
-			}
-			return results;
-		} catch (err) {
-			console.error("[Monkey] Failed to fetch results:", err.message);
-			return [];
-		}
-	}
+    try {
+      const res = await API.get(this.API_URL + path, { headers: this.headers });
+      return res.data;
+    } catch (err) {
+      console.error("[Monkey] Request error:", err.message);
+      throw err;
+    }
+  }
 
-	/**
-	 * Fetch the last available result.
-	 */
-	async getLastResult() {
-		try {
-			const json = await this.get("/results/last");
-			const results = json?.data ?? [];
-			if (results.length === 0) {
-				console.log("[Monkey] No last result found");
-			}
-			return results;
-		} catch (err) {
-			console.error("[Monkey] Failed to fetch last result:", err.message);
-			return [];
-		}
-	}
+  /**
+   * Fetch user profile by UID
+   */
+  async getProfileByID(uid) {
+    try {
+      const data = await this.get(`/users/${uid}/profile?isUid=true`);
+      console.debug({ data });
+      return data?.data ?? {};
+    } catch (err) {
+      console.error("[Monkey] Failed to fetch profile:", err.message);
+      return {};
+    }
+  }
+
+  /**
+   * Fetch user profile by username
+   */
+  async getProfileByUsername(username) {
+    try {
+      const data = await this.get(`/users/${username}/profile`);
+      console.debug({ data });
+      return data?.data ?? {};
+    } catch (err) {
+      console.error("[Monkey] Failed to fetch profile:", err.message);
+      return {};
+    }
+  }
+
+  /**
+   * Fetch user tags.
+   */
+  async getTags() {
+    try {
+      const data = await this.get("/users/tags");
+      console.debug({ data });
+      return data?.data ?? {};
+    } catch (err) {
+      console.error("[Monkey] Failed to fetch tags:", err.message);
+      return {};
+    }
+  }
+
+  /**
+   * Fetch results after a given timestamp.
+   * @param {number|null} timestamp - Unix timestamp in ms. If null, fetches up to 1000 results.
+   */
+  async getResults(timestamp = null, offset = 0) {
+    const params = new URLSearchParams();
+    if (timestamp) params.append("onOrAfterTimestamp", timestamp + 1);
+    if (offset) params.append("offset", offset);
+
+    try {
+      const data = await this.get(`/results?${params.toString()}`);
+      // console.debug({ data });
+      return data?.data ?? [];
+    } catch (err) {
+      console.error("[Monkey] Failed to fetch results:", err.message);
+      return [];
+    }
+  }
+
+  /**
+   * Fetch the last available result.
+   */
+  async getLastResult() {
+    try {
+      const data = await this.get("/results/last");
+      // console.debug({ data });
+      return data?.data ?? [];
+    } catch (err) {
+      console.error("[Monkey] Failed to fetch last result:", err.message);
+      return [];
+    }
+  }
 }
 
 export default new Monkey();
