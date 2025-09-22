@@ -1,0 +1,21 @@
+{
+  "imports": {
+    "@db/sqlite": "jsr:@db/sqlite@^0.12.0"
+  },
+  "permissions": {
+    "default": {
+      "env": true,
+      "read": [".env", "C:/Users/WiBla/AppData/Local/deno/plug"],
+      "net": true,
+
+      "sys": true,
+      "ffi": true,
+      "write": true
+    }
+  },
+  "tasks": {
+    "run": "deno -P ./src/app.ts",
+    "dev": "deno --watch -P ./src/app.ts",
+    "register": "deno -P ./src/commands.ts"
+  }
+}

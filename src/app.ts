@@ -8,8 +8,9 @@ import {
   verifyKeyMiddleware,
 } from "discord-interactions";
 import "dotenv/config";
-import express from "express";
-import { buildResponse, registerUser } from "./utils.js";
+import express, { Request, Response } from "express";
+import process from "node:process";
+import { buildResponse, registerUser } from "./utils.ts";
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -25,14 +26,11 @@ const commands = {
   test: () =>
     buildResponse({
       components: [
-        {
-          type: MessageComponentTypes.TEXT_DISPLAY,
-          content: "hello world !",
-        },
+        { type: MessageComponentTypes.TEXT_DISPLAY, content: "hello world !" },
       ],
     }),
 
-  register: async (req) => {
+  register: async (req: Request) => {
     const userId = req.body?.member?.user?.id; // Assumes bot is not used in DMs
     const ApeKey = req.body.data?.options?.[0]?.value;
 
@@ -115,8 +113,8 @@ const commands = {
  */
 app.post(
   "/interactions",
-  verifyKeyMiddleware(process.env.PUBLIC_KEY),
-  async (req, res) => {
+  verifyKeyMiddleware(process.env.PUBLIC_KEY || ""),
+  async (req: Request, res: Response) => {
     const { type, data } = req.body;
 
     // Handle Discord verification
@@ -148,10 +146,8 @@ app.post(
   },
 );
 
-app.listen(PORT, () => {
+app.listen(PORT, async () => {
   console.log("[APP] Listening on port", PORT);
 
-  // setTimeout(() => {
-  // 	getAllScores();
-  // }, 2e3);
+  // await registerUser("106511773581991936", process.env.wibla_key || "");
 });
