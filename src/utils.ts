@@ -37,9 +37,11 @@ export async function registerUser(discordId: string, apekey: string) {
 		await user.completeProfileFromAPI();
 
 		// Do not await this so it doesn't block the thread
-		user.initResults().catch((err) =>
-			console.error("[Utils] Error while fetching results for new user", err)
-		);
+		user.getResults()
+			.then((results) => db.addResults(results))
+			.catch((err) =>
+				console.error("[Utils] Error while fetching results for new user", err)
+			);
 
 		success = true;
 		console.log("[Utils] User registered successfully");

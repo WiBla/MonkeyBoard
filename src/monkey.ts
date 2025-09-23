@@ -1,4 +1,3 @@
-import * as path from "@std/path";
 import { AxiosRequestConfig, AxiosResponse } from "axios";
 import { API } from "./app.ts";
 import db from "./db.ts";
@@ -150,18 +149,6 @@ class Monkey {
 	// Results
 	//=========
 
-	async initResults() {
-		try {
-			const total = await this.getAllResultsAfter();
-
-			console.log(
-				`[Utils] Done saving ${total} new result(s) from this user's activity`,
-			);
-		} catch (err) {
-			console.error("[Utils] Error while initiating user results", err);
-		}
-	}
-
 	async updateResults() {
 		if (!this.uid) {
 			throw new Error(
@@ -175,7 +162,7 @@ class Monkey {
 			// Otherwise start from the 1st of the month
 			timestamp ??= getStartOfMonthTimestamp();
 
-			const total = await this.getAllResultsAfter(timestamp);
+			const total = await this.getResults(timestamp);
 
 			console.log(
 				`[Utils] Done saving ${total} new result(s) from this user's monthly activity`,
@@ -183,24 +170,6 @@ class Monkey {
 		} catch (err) {
 			console.error("[Utils] Error while updating user results", err);
 		}
-	}
-
-	async getAllResultsAfter(
-		timestamp: number | null = null,
-		offset = 0,
-		total = 0,
-	): Promise<number> {
-		const results = await this.getResults(timestamp, offset);
-
-		if (results !== undefined && results.length > 0) {
-			total += results.length;
-			console.log(`[Utils] Found ${results.length} scores, total ${total}`);
-
-			db.addResults(results);
-			console.log(`[Utils] Done saving current score data`);
-		}
-
-		return total;
 	}
 
 	async getResults(
@@ -215,13 +184,10 @@ class Monkey {
 
 		try {
 			const data = await this.get(`/results?${params.toString()}`);
-			Deno.writeTextFile(
-				path.join(
-					Deno.cwd(),
-					`./src/fakeData/backups/${this.name}_results_${timestamp}_${offset}.txt`,
-				),
-				JSON.stringify(data),
-			);
+			// Deno.writeTextFile(
+			// 	`./src/fakeData/backups/${this.name}_results_${timestamp}_${offset}.json`,
+			// 	JSON.stringify(data, null, 4),
+			// );
 			return data?.data ?? [];
 		} catch (err) {
 			console.error("[Monkey] Failed to fetch results:", err);
