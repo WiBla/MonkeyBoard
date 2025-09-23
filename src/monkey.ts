@@ -1,200 +1,244 @@
+import * as path from "@std/path";
 import { AxiosRequestConfig, AxiosResponse } from "axios";
 import { API } from "./app.ts";
 import db from "./db.ts";
-import { setpResults } from "./fakeData/seizure.ts";
-import { lastResult, lastThousandResults, profile } from "./fakeData/wibla.ts";
+import { getStartOfMonthTimestamp } from "./utils.ts";
 
 class Monkey {
-  API_URL: string;
-  reqConfig: AxiosRequestConfig;
-  apeKey: string | undefined;
+	private API_URL: string;
+	private reqConfig: AxiosRequestConfig;
+	public token: string;
+	public uid: string | undefined;
+	public name: string | undefined;
+	public discordId: number | undefined;
 
-  constructor() {
-    this.API_URL = "https://api.monkeytype.com";
-    this.reqConfig = { headers: { Authorization: "" } };
-    this.apeKey = undefined;
-  }
+	constructor(apekey: string, discordId?: number) {
+		this.checkToken(apekey);
 
-  setToken(token: string) {
-    const tokenPattern = /^[A-Za-z0-9\-_]{76}$/;
+		this.API_URL = "https://api.monkeytype.com";
+		this.reqConfig = { headers: { Authorization: `ApeKey ${apekey}` } };
+		this.token = apekey;
+		this.discordId = discordId;
+	}
 
-    if (typeof token !== "string" || !tokenPattern.test(token))
-      throw new Error("[Monkey] Invalid token format.");
+	checkToken(token: string) {
+		const tokenPattern = /^[A-Za-z0-9\-_]{76}$/;
 
-    this.reqConfig.headers!.Authorization = `ApeKey ${token}`;
-    this.apeKey = token;
-    console.log("[Monkey] API key set");
-  }
+		if (typeof token !== "string" || !tokenPattern.test(token)) {
+			throw new Error("[Monkey] Invalid token format.");
+		}
+	}
 
-  deleteToken() {
-    this.reqConfig.headers!.Authorization = undefined;
-    delete this.apeKey;
-    console.log("[Monkey] API key deleted");
-  }
+	async completeProfileFromAPI() {
+		// Check if key is valid and allows us to get their Monkeytype uid
+		const lastResult = await this.getLastResult();
+		if (!lastResult?.uid) throw new Error("Cannot get last result");
 
-  async isKeyValid(apeKey?: string): Promise<boolean> {
-    if (apeKey) this.setToken(apeKey);
+		// Get user's username
+		const profile = await this.getProfileByID(lastResult.uid);
+		if (!profile?.name) throw new Error("Cannot get profile");
 
-    if (!this.reqConfig) {
-      console.error("[Monkey] No API token set. Use setToken() first.");
-      return Promise.resolve(false);
-    }
+		this.uid = profile.uid;
+		this.name = profile.name;
 
-    try {
-      const res = await API.get(this.API_URL + "/psas", this.reqConfig);
+		// Save user to DB
+		db.addUser(this);
 
-      if (res.status === 200) {
-        db.setActive(this.apeKey!, true);
-        return Promise.resolve(true);
-      }
+		// Get user's tags
+		db.addTags(await this.getTags(), profile.uid);
+	}
 
-      if (res.status === 471) {
-        console.error("[Monkey] ApeKey is inactive", this.apeKey);
-        db.setActive(this.apeKey!, false);
-        return Promise.resolve(false);
-      }
+	completeProfileFromDB() {
+		const user = db.getUserByToken(this.token);
 
-      console.error("[Monkey] Unknown HTTP Status code : ", res.status);
-      return Promise.resolve(false);
-    } catch (err) {
-      console.error("[Monkey] Request error:", err);
-      return Promise.resolve(false);
-    }
-  }
+		if (user === undefined) {
+			throw new Error("[Monkey] User not found");
+		}
 
-  async get(path: string): Promise<AxiosResponse> {
-    if (!this.apeKey) {
-      console.error("[Monkey] No API token set. Use setToken() first.");
-      throw new Error("Unauthorized: API token not set");
-    }
+		this.uid = user.uid;
+		this.name = user.name;
+		this.discordId ??= user.discordId;
+	}
 
-    try {
-      const res = await API.get(this.API_URL + path, this.reqConfig);
-      return res.data;
-    } catch (err) {
-      console.error("[Monkey] Request error:", err);
-      throw err;
-    }
-  }
+	async isKeyValid(token?: string): Promise<boolean> {
+		if (token) this.token = token;
 
-  async fakeGet(path: string, fakeData: any): Promise<AxiosResponse> {
-    if (!this.apeKey) {
-      console.error("[Monkey] No API token set. Use setToken() first.");
-      throw new Error("Unauthorized: API token not set");
-    }
+		if (!this.reqConfig) {
+			console.error("[Monkey] No API token set. Use setToken() first.");
+			return Promise.resolve(false);
+		}
 
-    console.log(`[Monkey] [GET] ${this.API_URL + path}`);
-    return Promise.resolve(fakeData);
-  }
+		try {
+			const res = await API.get(this.API_URL + "/psas", this.reqConfig);
 
-  async getProfileByID(uid: string) {
-    try {
-      const data = await this.get(`/users/${uid}/profile?isUid=true`);
-      console.debug({ data });
-      return data?.data ?? {};
-    } catch (err) {
-      console.error("[Monkey] Failed to fetch profile:", err);
-      return {};
-    }
-  }
+			if (res.status === 200) {
+				db.setActive(this.token!, true);
+				return Promise.resolve(true);
+			}
 
-  async fakeProfileByID(uid: string) {
-    try {
-      const data = await this.fakeGet(
-        `/users/${uid}/profile?isUid=true`,
-        profile,
-      );
-      return data?.data ?? {};
-    } catch (err) {
-      console.error("[Monkey] Failed to fetch profile:", err);
-      return {};
-    }
-  }
+			if (res.status === 471) {
+				console.error("[Monkey] ApeKey is inactive", this.token);
+				db.setActive(this.token!, false);
+				return Promise.resolve(false);
+			}
 
-  async getProfileByUsername(username: string) {
-    try {
-      const data = await this.get(`/users/${username}/profile`);
-      console.debug({ data });
-      return data?.data ?? {};
-    } catch (err) {
-      console.error("[Monkey] Failed to fetch profile:", err);
-      return {};
-    }
-  }
+			console.error("[Monkey] Unknown HTTP Status code : ", res.status);
+			return Promise.resolve(false);
+		} catch (err) {
+			console.error("[Monkey] Request error:", err);
+			return Promise.resolve(false);
+		}
+	}
 
-  async getTags() {
-    try {
-      const data = await this.get("/users/tags");
-      console.debug({ data });
-      return data?.data ?? {};
-    } catch (err) {
-      console.error("[Monkey] Failed to fetch tags:", err);
-      return {};
-    }
-  }
+	async get(path: string): Promise<AxiosResponse> {
+		if (!this.token) {
+			console.error("[Monkey] No API token set. Use setToken() first.");
+			throw new Error("Unauthorized: API token not set");
+		}
 
-  async getResults(
-    timestamp: number | null = null,
-    offset = 0,
-  ): Promise<Result[]> {
-    const params = new URLSearchParams();
-    if (timestamp) params.append("onOrAfterTimestamp", timestamp + "");
-    if (offset) params.append("offset", offset + "");
+		try {
+			const res = await API.get(this.API_URL + path, this.reqConfig);
+			return res.data;
+		} catch (err) {
+			console.error("[Monkey] Request error:", err);
+			throw err;
+		}
+	}
 
-    try {
-      const data = await this.get(`/results?${params.toString()}`);
-      // console.debug({ data });
-      Deno.writeTextFileSync(
-        `results_${timestamp}_${offset}.txt`,
-        JSON.stringify(data),
-      );
-      return data?.data ?? [];
-    } catch (err) {
-      console.error("[Monkey] Failed to fetch results:", err);
-      return [];
-    }
-  }
+	//=========
+	// Profile
+	//=========
 
-  async fakeResults(
-    timestamp: number | null = null,
-    offset = 0,
-  ): Promise<Result[]> {
-    const params = new URLSearchParams();
-    if (timestamp) params.append("onOrAfterTimestamp", timestamp + "");
-    if (offset) params.append("offset", offset + "");
+	async getProfileByID(uid: string) {
+		try {
+			const data = await this.get(`/users/${uid}/profile?isUid=true`);
+			console.debug("[Monkey] Profile by ID", { data });
+			return data?.data ?? {};
+		} catch (err) {
+			console.error("[Monkey] Failed to fetch profile:", err);
+			return {};
+		}
+	}
 
-    try {
-      const data = await this.fakeGet(
-        `/results?${params.toString()}`,
-        offset === 0 ? lastThousandResults : setpResults,
-      );
-      return data?.data ?? [];
-    } catch (err) {
-      console.error("[Monkey] Failed to fetch results:", err);
-      return [];
-    }
-  }
+	async getProfileByUsername(username: string) {
+		try {
+			const data = await this.get(`/users/${username}/profile`);
+			console.debug("[Monkey] Profile by username", { data });
+			return data?.data ?? {};
+		} catch (err) {
+			console.error("[Monkey] Failed to fetch profile:", err);
+			return {};
+		}
+	}
 
-  async getLastResult() {
-    try {
-      const data = await this.get("/results/last");
-      console.debug({ data });
-      return data?.data ?? [];
-    } catch (err) {
-      console.error("[Monkey] Failed to fetch last result:", err);
-      return [];
-    }
-  }
+	//======
+	// Tags
+	//======
 
-  async fakeLastResult() {
-    try {
-      const data = await this.fakeGet("/results/last", lastResult);
-      return data?.data ?? [];
-    } catch (err) {
-      console.error("[Monkey] Failed to fetch last result:", err);
-      return [];
-    }
-  }
+	async getTags() {
+		try {
+			const data = await this.get("/users/tags");
+			console.debug("[Monkey] Tags", { data });
+			return data?.data ?? {};
+		} catch (err) {
+			console.error("[Monkey] Failed to fetch tags:", err);
+			return {};
+		}
+	}
+
+	//=========
+	// Results
+	//=========
+
+	async initResults() {
+		try {
+			const total = await this.getAllResultsAfter();
+
+			console.log(
+				`[Utils] Done saving ${total} new result(s) from this user's activity`,
+			);
+		} catch (err) {
+			console.error("[Utils] Error while initiating user results", err);
+		}
+	}
+
+	async updateResults() {
+		if (!this.uid) {
+			throw new Error(
+				"[Monkey] User must be completed from the DB or the API using 'monkey.completeProfileFrom..'",
+			);
+		}
+
+		try {
+			// Attempts to get the latest result that is already in DB
+			let timestamp = db.getMostRecentTimestamp(this.uid);
+			// Otherwise start from the 1st of the month
+			timestamp ??= getStartOfMonthTimestamp();
+
+			const total = await this.getAllResultsAfter(timestamp);
+
+			console.log(
+				`[Utils] Done saving ${total} new result(s) from this user's monthly activity`,
+			);
+		} catch (err) {
+			console.error("[Utils] Error while updating user results", err);
+		}
+	}
+
+	async getAllResultsAfter(
+		timestamp: number | null = null,
+		offset = 0,
+		total = 0,
+	): Promise<number> {
+		const results = await this.getResults(timestamp, offset);
+
+		if (results !== undefined && results.length > 0) {
+			total += results.length;
+			console.log(`[Utils] Found ${results.length} scores, total ${total}`);
+
+			db.addResults(results);
+			console.log(`[Utils] Done saving current score data`);
+		}
+
+		return total;
+	}
+
+	async getResults(
+		timestamp: number | null = null,
+		offset = 0,
+	): Promise<Result[]> {
+		const params = new URLSearchParams();
+		if (timestamp) params.append("onOrAfterTimestamp", timestamp + "");
+		if (offset) params.append("offset", offset + "");
+
+		console.debug("[Monkey] Fetching results", { timestamp, offset });
+
+		try {
+			const data = await this.get(`/results?${params.toString()}`);
+			Deno.writeTextFile(
+				path.join(
+					Deno.cwd(),
+					`./src/fakeData/backups/${this.name}_results_${timestamp}_${offset}.txt`,
+				),
+				JSON.stringify(data),
+			);
+			return data?.data ?? [];
+		} catch (err) {
+			console.error("[Monkey] Failed to fetch results:", err);
+			return [];
+		}
+	}
+
+	async getLastResult() {
+		try {
+			const data = await this.get("/results/last");
+			console.debug("[Monkey] Last result", { data });
+			return data?.data ?? [];
+		} catch (err) {
+			console.error("[Monkey] Failed to fetch last result:", err);
+			return [];
+		}
+	}
 }
 
-export default new Monkey();
+export default Monkey;

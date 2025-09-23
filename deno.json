@@ -1,21 +1,27 @@
 {
-  "imports": {
-    "@db/sqlite": "jsr:@db/sqlite@^0.12.0"
-  },
-  "permissions": {
-    "default": {
-      "env": true,
-      "read": [".env", "C:/Users/WiBla/AppData/Local/deno/plug"],
-      "net": true,
+	"imports": {
+		"@db/sqlite": "jsr:@db/sqlite@^0.12.0",
+		"@std/path": "jsr:@std/path@^1.1.2"
+	},
+	"permissions": {
+		"default": {
+			"env": true,
+			"read": [".env", "C:/Users/WiBla/AppData/Local/deno/plug"],
+			"net": true,
 
-      "sys": true,
-      "ffi": true,
-      "write": true
-    }
-  },
-  "tasks": {
-    "run": "deno -P ./src/app.ts",
-    "dev": "deno --watch -P ./src/app.ts",
-    "register": "deno -P ./src/commands.ts"
-  }
+			"sys": true,
+			"ffi": true,
+			"write": true
+		}
+	},
+	"tasks": {
+		"run": "deno -P --env-file ./src/app.ts",
+		"dev": "deno --watch -P ./src/app.ts",
+		"register": "deno -P ./src/commands.ts"
+	},
+	"fmt": {
+		"useTabs": true,
+		"indentWidth": 2,
+		"include": ["src/"]
+	}
 }

@@ -2,4 +2,4 @@
 data.db
 /node_modules
 /imgs
-src/fakeData/
+src/fakeData

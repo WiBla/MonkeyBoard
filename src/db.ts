@@ -1,64 +1,66 @@
 import { Database } from "@db/sqlite";
+import Monkey from "./monkey.ts";
+import { getStartOfMonthTimestamp } from "./utils.ts";
 
 class DB {
-  db!: Database;
+	db!: Database;
 
-  constructor() {
-    this.initDB();
-  }
+	constructor() {
+		this.initDB();
+	}
 
-  initDB() {
-    const db = new Database("./data.db");
-    this.db = db;
+	initDB() {
+		const db = new Database("./data.db");
+		this.db = db;
 
-    this.createTables();
-    this.verifyTables();
+		this.createTables();
+		this.verifyTables();
 
-    console.log("[DB] Ready");
-  }
+		console.log("[DB] Ready");
+	}
 
-  createTables() {
-    // users
-    this.db.exec(`
-      CREATE TABLE IF NOT EXISTS "users" (
-        "uid"	TEXT NOT NULL,
-        "name"	TEXT,
-        "discordId"	INTEGER,
-        "apeKey"	TEXT,
-        "isActive"	INTEGER,
-        PRIMARY KEY("uid")
-      );
-    `);
-    // tags
-    this.db.exec(`
-      CREATE TABLE IF NOT EXISTS "tags" (
-        "id"	TEXT NOT NULL,
-        "name"	TEXT,
-        "uid"	TEXT,
-        PRIMARY KEY("id")
-      );
-    `);
-    // results
-    this.db.exec(`
-      CREATE TABLE IF NOT EXISTS results (
-        id TEXT PRIMARY KEY NOT NULL,
-        uid TEXT,
-        wpm REAL,
-        rawWpm REAL,
-        charStats TEXT,
-        acc REAL,
-        mode TEXT,
-        mode2 TEXT,
+	createTables() {
+		// users
+		this.db.exec(`
+			CREATE TABLE IF NOT EXISTS "users" (
+				"uid"	TEXT NOT NULL,
+				"name"	TEXT,
+				"discordId"	TEXT,
+				"apeKey"	TEXT,
+				"isActive"	INTEGER,
+				PRIMARY KEY("uid")
+			);
+		`);
+		// tags
+		this.db.exec(`
+			CREATE TABLE IF NOT EXISTS "tags" (
+				"id"	TEXT NOT NULL,
+				"name"	TEXT,
+				"uid"	TEXT,
+				PRIMARY KEY("id")
+			);
+		`);
+		// results
+		this.db.exec(`
+			CREATE TABLE IF NOT EXISTS results (
+				id TEXT PRIMARY KEY NOT NULL,
+				uid TEXT,
+				wpm REAL,
+				rawWpm REAL,
+				charStats TEXT,
+				acc REAL,
+				mode TEXT,
+				mode2 TEXT,
 				quoteLength INTEGER,
-        timestamp INTEGER,
-        restartCount INTEGER,
-        incompleteTestSeconds REAL,
+				timestamp INTEGER,
+				restartCount INTEGER,
+				incompleteTestSeconds REAL,
 				afkDuration REAL,
-        testDuration REAL,
-        tags TEXT,
-        consistency REAL,
-        keyConsistency REAL,
-        language TEXT,
+				testDuration REAL,
+				tags TEXT,
+				consistency REAL,
+				keyConsistency REAL,
+				language TEXT,
 				bailedOut INTEGER,
 				blindMode INTEGER,
 				lazyMode INTEGER,
@@ -67,124 +69,136 @@ class DB {
 				numbers INTEGER,
 				punctuation INTEGER,
 				isPb INTEGER
-      );
-    `);
-  }
+			);
+		`);
+	}
 
-  verifyTables() {
-    this.ensureColumns("users", {
-      uid: "TEXT NOT NULL",
-      name: "TEXT",
-      discordId: "INTEGER",
-      apeKey: "TEXT",
-      isActive: "INTEGER",
-    });
+	verifyTables() {
+		this.ensureColumns("users", {
+			uid: "TEXT NOT NULL",
+			name: "TEXT",
+			discordId: "TEXT",
+			apeKey: "TEXT",
+			isActive: "INTEGER",
+		});
 
-    this.ensureColumns("tags", {
-      id: "TEXT NOT NULL",
-      name: "TEXT",
-      uid: "TEXT",
-    });
+		this.ensureColumns("tags", {
+			id: "TEXT NOT NULL",
+			name: "TEXT",
+			uid: "TEXT",
+		});
 
-    this.ensureColumns("results", {
-      id: "TEXT PRIMARY KEY NOT NULL",
-      uid: "TEXT",
-      wpm: "REAL",
-      rawWpm: "REAL",
-      charStats: "TEXT",
-      acc: "REAL",
-      mode: "TEXT",
-      mode2: "TEXT",
-      quoteLength: "INTEGER",
-      timestamp: "INTEGER",
-      restartCount: "INTEGER",
-      incompleteTestSeconds: "REAL",
-      afkDuration: "REAL",
-      testDuration: "REAL",
-      tags: "TEXT",
-      consistency: "REAL",
-      keyConsistency: "REAL",
-      language: "TEXT",
-      bailedOut: "INTEGER",
-      blindMode: "INTEGER",
-      lazyMode: "INTEGER",
-      funbox: "TEXT",
-      difficulty: "TEXT",
-      numbers: "INTEGER",
-      punctuation: "INTEGER",
-      isPb: "INTEGER",
-    });
-  }
+		this.ensureColumns("results", {
+			id: "TEXT PRIMARY KEY NOT NULL",
+			uid: "TEXT",
+			wpm: "REAL",
+			rawWpm: "REAL",
+			charStats: "TEXT",
+			acc: "REAL",
+			mode: "TEXT",
+			mode2: "TEXT",
+			quoteLength: "INTEGER",
+			timestamp: "INTEGER",
+			restartCount: "INTEGER",
+			incompleteTestSeconds: "REAL",
+			afkDuration: "REAL",
+			testDuration: "REAL",
+			tags: "TEXT",
+			consistency: "REAL",
+			keyConsistency: "REAL",
+			language: "TEXT",
+			bailedOut: "INTEGER",
+			blindMode: "INTEGER",
+			lazyMode: "INTEGER",
+			funbox: "TEXT",
+			difficulty: "TEXT",
+			numbers: "INTEGER",
+			punctuation: "INTEGER",
+			isPb: "INTEGER",
+		});
+	}
 
-  ensureColumns(table: string, columns: Record<string, string>): void {
-    {
-      using stmt = this.db.prepare(`PRAGMA table_info(${table})`);
-      const realCols = stmt.all<{ name: string }>();
+	ensureColumns(table: string, columns: Record<string, string>): void {
+		{
+			using stmt = this.db.prepare(`PRAGMA table_info(${table})`);
+			const realCols = stmt.all<{ name: string }>();
 
-      for (const colname in columns) {
-        const exists = realCols.some((c) => c.name === colname);
-        // console.debug({ realCols, colname, exists });
-        if (!exists) {
-          console.log(`[DB] Adding missing column '${colname}' to '${table}'`);
-          this.db.exec(
-            `ALTER TABLE ${table} ADD COLUMN ${colname} ${columns[colname]}`,
-          );
-        }
-      }
-    }
-  }
+			for (const colname in columns) {
+				const exists = realCols.some((c) => c.name === colname);
+				// console.debug({ realCols, colname, exists });
+				if (!exists) {
+					console.log(`[DB] Adding missing column '${colname}' to '${table}'`);
+					this.db.exec(
+						`ALTER TABLE ${table} ADD COLUMN ${colname} ${columns[colname]}`,
+					);
+				}
+			}
+		}
+	}
 
-  close() {
-    this.db.close();
-    console.log("[DB] Closed");
-  }
+	close() {
+		this.db.close();
+		console.log("[DB] Closed");
+	}
 
-  //=======
-  // Users
-  //=======
+	//=======
+	// Users
+	//=======
 
-  getAllUsers() {
-    return this.db.prepare("SELECT * from users where 1 limit 100").all();
-  }
+	getAllUsers() {
+		return this.db.prepare("SELECT * from users where 1 limit 100").all();
+	}
 
-  addUser(
-    uid: string,
-    name: string,
-    discordId: string,
-    apeKey: string,
-    isActive: boolean,
-  ) {
-    {
-      using insertStmt = this.db.prepare(`
-    INSERT INTO users (
-      uid, name, discordId, apeKey, isActive
-    )
-    VALUES (:uid, :name, :discordId, :apeKey, :isActive)
-    ON CONFLICT(uid) DO UPDATE SET
-    uid = excluded.uid,
-    name = excluded.name,
-    discordId = excluded.discordId
-  `);
+	getUserByToken(token: string): User | undefined {
+		{
+			using stmt = this.db.prepare(`SELECT * FROM users WHERE apeKey = ?`);
+			return stmt.get<User>(token);
+		}
+	}
 
-      insertStmt.run({ uid, name, discordId, apeKey, isActive });
-      console.log("[DB] User saved");
-    }
-  }
+	addUser(
+		user: Monkey,
+	) {
+		const { uid, name, discordId, token } = user;
 
-  setActive(apeKey: string, isActive: boolean) {
-    this.db.exec(
-      "UPDATE users SET isActive = :isActive WHERE apeKey = :apeKey",
-      { isActive, apeKey },
-    );
-  }
+		if ([uid, name, discordId, token].indexOf(undefined) !== -1) {
+			throw new Error(
+				"[DB] Missing data to save user" +
+					JSON.stringify({ uid, name, discordId, token }, null, 4),
+			);
+		}
 
-  //======
-  // Tags
-  //======
+		{
+			using insertStmt = this.db.prepare(`
+		INSERT INTO users (
+			uid, name, discordId, apeKey, isActive
+		)
+		VALUES (:uid, :name, :discordId, :token, 1)
+		ON CONFLICT(uid) DO UPDATE SET
+		uid = excluded.uid,
+		name = excluded.name,
+		discordId = excluded.discordId
+	`);
 
-  addTags(tags: Tag[], uid: string) {
-    {
-      using insertStmt = this.db.prepare(`
+			insertStmt.run({ uid, name, discordId, token });
+			console.log("[DB] User saved");
+		}
+	}
+
+	setActive(apeKey: string, isActive: boolean) {
+		this.db.exec(
+			"UPDATE users SET isActive = :isActive WHERE apeKey = :apeKey",
+			{ isActive, apeKey },
+		);
+	}
+
+	//======
+	// Tags
+	//======
+
+	addTags(tags: Tag[], uid: string) {
+		{
+			using insertStmt = this.db.prepare(`
 				INSERT INTO tags (
 					id, name, uid
 				)
@@ -195,30 +209,21 @@ class DB {
 				uid = excluded.uid
 			`);
 
-      for (const tag of tags) {
-        insertStmt.run({ id: tag._id, name: tag.name, uid });
-      }
+			for (const tag of tags) {
+				insertStmt.run({ id: tag._id, name: tag.name, uid });
+			}
 
-      console.log(`[DB] ${tags.length} Tag(s) added`);
-    }
-  }
+			console.log(`[DB] ${tags.length} Tag(s) added`);
+		}
+	}
 
-  //=========
-  // Results
-  //=========
+	//=========
+	// Results
+	//=========
 
-  getMostRecentTimestamp(uid: string): number | undefined {
-    {
-      using stmt = this.db.prepare(
-        "SELECT timestamp FROM results WHERE uid = ? ORDER BY timestamp DESC LIMIT 1",
-      );
-      return stmt.get<{ timestamp: number }>(uid)?.timestamp;
-    }
-  }
-
-  addResults(results: Result[]) {
-    {
-      using insertStmt = this.db.prepare(`
+	addResults(results: Result[]) {
+		{
+			using insertStmt = this.db.prepare(`
 				INSERT INTO results (
 					id, uid, wpm, rawWpm, charStats, acc, mode, mode2, timestamp,
 					restartCount, incompleteTestSeconds, testDuration, tags,
@@ -259,52 +264,125 @@ class DB {
 					isPb = excluded.isPb
 			`);
 
-      let i = 0;
-      for (const result of results) {
-        i++;
-        try {
-          insertStmt.run({
-            id: result._id ?? null,
-            uid: result.uid ?? null,
-            wpm: result.wpm ?? null,
-            rawWpm: result.rawWpm ?? null,
-            charStats: JSON.stringify(result?.charStats ?? []),
-            acc: result.acc ?? null,
-            mode: result.mode ?? null,
-            mode2: result.mode2 ?? null,
-            timestamp: result.timestamp ?? null,
-            restartCount: result.restartCount ?? null,
-            incompleteTestSeconds: result?.incompleteTestSeconds ?? null,
-            testDuration: result.testDuration ?? null,
-            tags: JSON.stringify(result?.tags ?? []),
-            consistency: result.consistency ?? null,
-            keyConsistency: result.keyConsistency ?? null,
-            language: result?.language ?? null,
-            quoteLength: result?.quoteLength ?? null,
-            afkDuration: result?.afkDuration ?? null,
-            bailedOut: result?.bailedOut ?? 0,
-            blindMode: result?.blindMode ?? 0,
-            lazyMode: result?.lazyMode ?? 0,
-            funbox: JSON.stringify(result?.funbox ?? []),
-            difficulty: result?.difficulty ?? null,
-            numbers: result?.numbers ?? 0,
-            punctuation: result?.punctuation ?? 0,
-            isPb: result?.isPb ?? 0,
-          });
-          // console.log(`[DB] Done saving result ${i} of ${results.length}`);
-        } catch (error) {
-          console.error(
-            `[DB] Error while inserting result ${i} of ${results.length} : `,
-          );
-          console.error(error);
-          // console.debug(insertStmt);
-          break;
-        }
-      }
+			let i = 0;
+			for (const result of results) {
+				i++;
+				result.timestamp = Math.floor(result.timestamp / 1000);
+				try {
+					insertStmt.run({
+						id: result._id ?? null,
+						uid: result.uid ?? null,
+						wpm: result.wpm ?? null,
+						rawWpm: result.rawWpm ?? null,
+						charStats: JSON.stringify(result?.charStats ?? []),
+						acc: result.acc ?? null,
+						mode: result.mode ?? null,
+						mode2: result.mode2 ?? null,
+						timestamp: isNaN(result.timestamp) ? null : result.timestamp,
+						restartCount: result.restartCount ?? null,
+						incompleteTestSeconds: result?.incompleteTestSeconds ?? null,
+						testDuration: result.testDuration ?? null,
+						tags: JSON.stringify(result?.tags ?? []),
+						consistency: result.consistency ?? null,
+						keyConsistency: result.keyConsistency ?? null,
+						language: result?.language ?? null,
+						quoteLength: result?.quoteLength ?? null,
+						afkDuration: result?.afkDuration ?? null,
+						bailedOut: result?.bailedOut ?? 0,
+						blindMode: result?.blindMode ?? 0,
+						lazyMode: result?.lazyMode ?? 0,
+						funbox: JSON.stringify(result?.funbox ?? []),
+						difficulty: result?.difficulty ?? null,
+						numbers: result?.numbers ?? 0,
+						punctuation: result?.punctuation ?? 0,
+						isPb: result?.isPb ?? 0,
+					});
+					// console.log(`[DB] Done saving result ${i} of ${results.length}`);
+				} catch (error) {
+					console.error(
+						`[DB] Error while inserting result ${i} of ${results.length} : `,
+					);
+					console.error(error);
+					// console.debug(insertStmt);
+					break;
+				}
+			}
 
-      console.log(`[DB] ${results.length} Result(s) added`);
-    }
-  }
+			console.log(`[DB] ${results.length} Result(s) added`);
+		}
+	}
+
+	getLeaderboard() {
+		{
+			using stmt = this.db.prepare(`
+				WITH filtered_results AS (
+					SELECT 
+						r.id,
+						r.uid,
+						r.wpm,
+						r.acc,
+						r.mode,
+						r.mode2,
+						r.language,
+						r.isPb,
+						CAST(r.timestamp AS TEXT) AS timestamp
+					FROM results r
+					WHERE
+						r.acc >= 95.5
+						AND r.mode = 'words'
+						AND
+						(
+							((r.language IS NULL OR r.language = 'french') AND r.mode2 = '50')
+							OR (r.language IN ('french_600k', 'english_450k') AND r.mode2 = '25')
+						)
+						AND r.lazyMode = 0
+			),
+			ranked_results AS (
+				SELECT 
+					fr.*,
+					ROW_NUMBER() OVER (
+						PARTITION BY fr.uid, fr.language
+						ORDER BY fr.wpm DESC
+					) AS rn
+				FROM filtered_results fr
+			)
+			SELECT
+				rr.id,
+				u.name,
+				u.discordId,
+				rr.wpm,
+				rr.acc,
+				rr.language,
+				rr.mode,
+				rr.mode2,
+				rr.isPb,
+				rr.timestamp
+			FROM ranked_results rr
+			JOIN users u ON rr.uid = u.uid
+			WHERE rr.rn = 1
+			`);
+
+			const start = getStartOfMonthTimestamp(new Date().getMonth() - 1);
+			const end = getStartOfMonthTimestamp();
+
+			return stmt.all({ start, end }).map((row) => ({
+				...row,
+				isPb: Boolean(row.isPb),
+				time: new Date(Number(row.timestamp)).toLocaleDateString(),
+			}));
+		}
+	}
+
+	getMostRecentTimestamp(uid: string): number | undefined {
+		{
+			using stmt = this.db.prepare(
+				"SELECT timestamp FROM results WHERE uid = ? ORDER BY timestamp DESC LIMIT 1",
+			);
+
+			const ts = stmt.get<{ timestamp: number }>(uid)?.timestamp;
+			return ts === undefined ? ts : ts * 1000;
+		}
+	}
 }
 
 export default new DB();

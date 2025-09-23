@@ -1,54 +1,54 @@
 type Result = {
-  _id: string;
-  uid: string;
-  wpm: number;
-  rawWpm: number;
-  charStats: string;
-  acc: number;
-  mode: string;
-  mode2: string;
-  quoteLength?: number;
-  timestamp: number;
-  restartCount: number;
-  incompleteTestSeconds: number;
-  afkDuration?: number;
-  testDuration: number;
-  tags?: string;
-  consistency: number;
-  keyConsistency: number;
-  language?: string;
-  bailedOut?: boolean;
-  blindMode?: boolean;
-  lazyMode?: boolean;
-  funbox?: string;
-  difficulty?: string;
-  numbers?: boolean;
-  punctuation?: boolean;
-  isPb?: boolean;
+	_id: string;
+	uid: string;
+	wpm: number;
+	rawWpm: number;
+	charStats: string;
+	acc: number;
+	mode: string;
+	mode2: string;
+	quoteLength?: number;
+	timestamp: number;
+	restartCount: number;
+	incompleteTestSeconds: number;
+	afkDuration?: number;
+	testDuration: number;
+	tags?: string;
+	consistency: number;
+	keyConsistency: number;
+	language?: string;
+	bailedOut?: boolean;
+	blindMode?: boolean;
+	lazyMode?: boolean;
+	funbox?: string;
+	difficulty?: string;
+	numbers?: boolean;
+	punctuation?: boolean;
+	isPb?: boolean;
 };
 
 type Tag = { _id: string; name: string; uid: string };
 
 type User = {
-  uid: string;
-  name: string;
-  discordId: number;
-  apeKey: string;
-  isActive: boolean;
+	uid: string;
+	name: string;
+	discordId: number;
+	apeKey: string;
+	isActive: boolean;
 };
 
 type CommandOption = {
-  type: number;
-  name: string;
-  description: string;
-  required: boolean;
+	type: number;
+	name: string;
+	description: string;
+	required: boolean;
 };
 
 type Command = {
-  name: string;
-  description: string;
-  type: number;
-  integration_types: number[];
-  contexts: number[];
-  options?: CommandOption[];
+	name: string;
+	description: string;
+	type: number;
+	integration_types: number[];
+	contexts: number[];
+	options?: CommandOption[];
 };

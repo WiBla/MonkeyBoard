@@ -1,0 +1,40 @@
+{
+  "folders": [
+    {
+      "path": ".."
+    }
+  ],
+  "settings": {
+    "files.exclude": {
+      "node_modules": true
+    },
+    "editor.defaultFormatter": "denoland.vscode-deno",
+    "editor.formatOnSave": true,
+    "editor.formatOnSaveMode": "file",
+    "[json]": {
+      "editor.defaultFormatter": "denoland.vscode-deno"
+    },
+    "javascript.preferences.importModuleSpecifierEnding": "js",
+    "deno.enable": true,
+    "deno.lint": true
+  },
+  "launch": {
+    "version": "0.2.0",
+    "configurations": [{
+      "request": "launch",
+      "name": "Deno",
+      "type": "node",
+      "program": "${workspaceFolder}/src/app.ts",
+      "cwd": "${workspaceFolder}",
+      "env": {},
+      "runtimeExecutable": "C:\\Users\\WiBla\\.deno\\bin\\deno.EXE",
+      "runtimeArgs": [
+				"run",
+				"-P",
+        "--inspect-wait",
+				"--env-file",
+      ],
+      "attachSimplePort": 9229
+    }]
+  }
+}
