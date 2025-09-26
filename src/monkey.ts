@@ -1,7 +1,7 @@
 import { AxiosRequestConfig, AxiosResponse } from "axios";
 import { API } from "./app.ts";
 import db from "./db.ts";
-import { getStartOfMonthTimestamp } from "./utils.ts";
+import { getStartOfMonthTimestamp } from "./utils/utils.ts";
 
 class Monkey {
 	private API_URL: string;

@@ -36,19 +36,3 @@ type User = {
 	apeKey: string;
 	isActive: boolean;
 };
-
-type CommandOption = {
-	type: number;
-	name: string;
-	description: string;
-	required: boolean;
-};
-
-type Command = {
-	name: string;
-	description: string;
-	type: number;
-	integration_types: number[];
-	contexts: number[];
-	options?: CommandOption[];
-};

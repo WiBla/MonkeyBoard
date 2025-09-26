@@ -2,8 +2,8 @@ import {
 	InteractionResponseFlags,
 	InteractionResponseType,
 } from "discord-interactions";
-import db from "./db.ts";
-import Monkey from "./monkey.ts";
+import db from "../db.ts";
+import Monkey from "../monkey.ts";
 
 export function getStartOfMonthTimestamp(month?: number): number {
 	const now = new Date();

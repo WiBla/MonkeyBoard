@@ -8,7 +8,7 @@ import {
 	verifyKeyMiddleware,
 } from "discord-interactions";
 import express, { Request, Response } from "express";
-import { buildResponse, registerUser } from "./utils.ts";
+import { buildResponse, registerUser } from "./utils/utils.ts";
 
 if (Deno.env.get("PUBLIC_KEY") === undefined) {
 	console.error(".env file not properly configured");

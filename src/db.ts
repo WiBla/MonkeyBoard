@@ -1,6 +1,6 @@
 import { Database } from "@db/sqlite";
 import Monkey from "./monkey.ts";
-import { getStartOfMonthTimestamp } from "./utils.ts";
+import { getStartOfMonthTimestamp } from "./utils/utils.ts";
 
 class DB {
 	db!: Database;
