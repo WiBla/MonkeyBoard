@@ -196,7 +196,7 @@ class DB {
 	// Tags
 	//======
 
-	addTags(tags: Tag[], uid: string) {
+	addTags(tags: Tag[]) {
 		{
 			using insertStmt = this.db.prepare(`
 				INSERT INTO tags (
@@ -210,7 +210,7 @@ class DB {
 			`);
 
 			for (const tag of tags) {
-				insertStmt.run({ id: tag._id, name: tag.name, uid });
+				insertStmt.run({ id: tag._id, name: tag.name, uid: tag.uid });
 			}
 
 			console.log(`[DB] ${tags.length} Tag(s) added`);

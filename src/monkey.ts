@@ -1,21 +1,21 @@
-import { AxiosRequestConfig, AxiosResponse } from "axios";
-import { API } from "./app.ts";
 import db from "./db.ts";
 import { getStartOfMonthTimestamp } from "./utils/utils.ts";
 
 class Monkey {
+	// #region Properties
 	private API_URL: string;
-	private reqConfig: AxiosRequestConfig;
+	private headers: HeadersInit;
 	public token: string;
 	public uid: string | undefined;
 	public name: string | undefined;
 	public discordId: number | undefined;
+	// #endregion
 
 	constructor(apekey: string, discordId?: number) {
 		this.checkToken(apekey);
 
 		this.API_URL = "https://api.monkeytype.com";
-		this.reqConfig = { headers: { Authorization: `ApeKey ${apekey}` } };
+		this.headers = { Authorization: `ApeKey ${apekey}` };
 		this.token = apekey;
 		this.discordId = discordId;
 	}
@@ -44,7 +44,13 @@ class Monkey {
 		db.addUser(this);
 
 		// Get user's tags
-		db.addTags(await this.getTags(), profile.uid);
+		const tags: Tags[] = await this.getTags();
+		if (tags.length === 0) {
+			console.log("[Monkey] No tags found for this user");
+			return;
+		} else {
+			db.addTags(tags.map((tag) => ({ ...tag, uid: profile.uid })));
+		}
 	}
 
 	completeProfileFromDB() {
@@ -62,45 +68,54 @@ class Monkey {
 	async isKeyValid(token?: string): Promise<boolean> {
 		if (token) this.token = token;
 
-		if (!this.reqConfig) {
+		if (!this.headers) {
 			console.error("[Monkey] No API token set. Use setToken() first.");
 			return Promise.resolve(false);
 		}
 
 		try {
-			const res = await API.get(this.API_URL + "/psas", this.reqConfig);
+			const res = await fetch(this.API_URL + "/psas", {
+				method: "GET",
+				headers: this.headers,
+			});
 
 			if (res.status === 200) {
 				db.setActive(this.token!, true);
-				return Promise.resolve(true);
+				return true;
 			}
 
 			if (res.status === 471) {
 				console.error("[Monkey] ApeKey is inactive", this.token);
 				db.setActive(this.token!, false);
-				return Promise.resolve(false);
+				return false;
 			}
 
 			console.error("[Monkey] Unknown HTTP Status code : ", res.status);
-			return Promise.resolve(false);
+			return false;
 		} catch (err) {
 			console.error("[Monkey] Request error:", err);
-			return Promise.resolve(false);
+			return false;
 		}
 	}
 
-	async get(path: string): Promise<AxiosResponse> {
+	async get<T>(path: string): Promise<APIResponse<T>> {
 		if (!this.token) {
 			console.error("[Monkey] No API token set. Use setToken() first.");
 			throw new Error("Unauthorized: API token not set");
 		}
 
 		try {
-			const res = await API.get(this.API_URL + path, this.reqConfig);
-			return res.data;
+			const res = await fetch(this.API_URL + path, {
+				method: "GET",
+				headers: this.headers,
+			});
+			if (!res.ok) {
+				throw new Error(`HTTP error! status: ${res.status}`);
+			}
+			return await res.json();
 		} catch (err) {
 			console.error("[Monkey] Request error:", err);
-			throw err;
+			return { message: "Request error" } as APIResponse<T>;
 		}
 	}
 
@@ -108,25 +123,27 @@ class Monkey {
 	// Profile
 	//=========
 
-	async getProfileByID(uid: string) {
+	async getProfileByID(uid: string): Promise<Profile> {
 		try {
-			const data = await this.get(`/users/${uid}/profile?isUid=true`);
-			console.debug("[Monkey] Profile by ID", { data });
-			return data?.data ?? {};
+			const data = await this.get<Profile>(
+				`/users/${uid}/profile?isUid=true`,
+			);
+			console.debug("[Monkey] Profile by ID", data);
+			return (data?.data ?? {}) as Profile;
 		} catch (err) {
 			console.error("[Monkey] Failed to fetch profile:", err);
-			return {};
+			return {} as Profile;
 		}
 	}
 
-	async getProfileByUsername(username: string) {
+	async getProfileByUsername(username: string): Promise<Profile> {
 		try {
-			const data = await this.get(`/users/${username}/profile`);
-			console.debug("[Monkey] Profile by username", { data });
-			return data?.data ?? {};
+			const data = await this.get<Profile>(`/users/${username}/profile`);
+			console.debug("[Monkey] Profile by username", data);
+			return (data?.data ?? {}) as Profile;
 		} catch (err) {
 			console.error("[Monkey] Failed to fetch profile:", err);
-			return {};
+			return {} as Profile;
 		}
 	}
 
@@ -134,14 +151,14 @@ class Monkey {
 	// Tags
 	//======
 
-	async getTags() {
+	async getTags(): Promise<Tags[]> {
 		try {
-			const data = await this.get("/users/tags");
-			console.debug("[Monkey] Tags", { data });
-			return data?.data ?? {};
+			const data = await this.get<APIResponse<Tags[]>>("/users/tags");
+			console.debug("[Monkey] Tags", data);
+			return (data?.data ?? []) as Tags[];
 		} catch (err) {
 			console.error("[Monkey] Failed to fetch tags:", err);
-			return {};
+			return [] as Tags[];
 		}
 	}
 
@@ -183,26 +200,24 @@ class Monkey {
 		console.debug("[Monkey] Fetching results", { timestamp, offset });
 
 		try {
-			const data = await this.get(`/results?${params.toString()}`);
-			// Deno.writeTextFile(
-			// 	`./src/fakeData/backups/${this.name}_results_${timestamp}_${offset}.json`,
-			// 	JSON.stringify(data, null, 4),
-			// );
-			return data?.data ?? [];
+			const data = await this.get<APIResponse<Result[]>>(
+				`/results?${params.toString()}`,
+			);
+			return (data?.data ?? []) as Result[];
 		} catch (err) {
 			console.error("[Monkey] Failed to fetch results:", err);
 			return [];
 		}
 	}
 
-	async getLastResult() {
+	async getLastResult(): Promise<LastResult> {
 		try {
-			const data = await this.get("/results/last");
-			console.debug("[Monkey] Last result", { data });
-			return data?.data ?? [];
+			const data = await this.get<APIResponse<LastResult>>("/results/last");
+			console.debug("[Monkey] Last result", data);
+			return (data?.data ?? {}) as LastResult;
 		} catch (err) {
 			console.error("[Monkey] Failed to fetch last result:", err);
-			return [];
+			return {} as LastResult;
 		}
 	}
 }

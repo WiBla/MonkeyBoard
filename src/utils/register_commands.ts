@@ -9,7 +9,8 @@ import {
 const APP_ID = Deno.env.get("APP_ID");
 const DISCORD_TOKEN = Deno.env.get("DISCORD_TOKEN");
 if (!APP_ID || !DISCORD_TOKEN) {
-	throw new Error("Missing AppId or Discord Token");
+	console.error(".env file not properly configured");
+	Deno.exit(1);
 }
 
 const baseCmd = {

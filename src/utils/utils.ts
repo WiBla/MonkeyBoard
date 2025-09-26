@@ -4,6 +4,7 @@ import {
 } from "discord-interactions";
 import db from "../db.ts";
 import Monkey from "../monkey.ts";
+import { Component, InteractionResponse } from "../types/discord.d.ts";
 
 export function getStartOfMonthTimestamp(month?: number): number {
 	const now = new Date();
@@ -16,13 +17,9 @@ export function buildResponse({
 	components,
 }: {
 	type?: number;
-	flags?: number;
-	components: {
-		type: number;
-		items?: { media: { url: string } }[];
-		content?: string;
-	}[];
-}) {
+	flags: number;
+	components: Component[];
+}): InteractionResponse {
 	// Add component V2 by default
 	flags |= InteractionResponseFlags.IS_COMPONENTS_V2;
 
