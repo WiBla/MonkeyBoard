@@ -3,15 +3,10 @@ import Monkey from "./monkey.ts";
 import { getStartOfMonthTimestamp } from "./utils/utils.ts";
 
 class DB {
-	db!: Database;
+	public db: Database;
 
 	constructor() {
-		this.initDB();
-	}
-
-	initDB() {
-		const db = new Database("./data.db");
-		this.db = db;
+		this.db = new Database("./data.db");
 
 		this.createTables();
 		this.verifyTables();
@@ -153,6 +148,13 @@ class DB {
 		{
 			using stmt = this.db.prepare(`SELECT * FROM users WHERE apeKey = ?`);
 			return stmt.get<User>(token);
+		}
+	}
+
+	getUserByDiscordId(discordId: string): User | undefined {
+		{
+			using stmt = this.db.prepare(`SELECT * FROM users WHERE discordId = ?`);
+			return stmt.get<User>(discordId);
 		}
 	}
 
@@ -312,10 +314,10 @@ class DB {
 		}
 	}
 
-	getLeaderboard() {
+	getLeaderboard(uid?: string): LeaderboardMapped[] {
 		{
-			using stmt = this.db.prepare(`
-				WITH filtered_results AS (
+			using stmt = this.db.prepare(
+				`WITH filtered_results AS (
 					SELECT 
 						r.id,
 						r.uid,
@@ -328,6 +330,7 @@ class DB {
 						CAST(r.timestamp AS TEXT) AS timestamp
 					FROM results r
 					WHERE
+						${uid ? "r.uid = :uid AND" : ""}
 						r.acc >= 95.5
 						AND r.mode = 'words'
 						AND
@@ -336,6 +339,9 @@ class DB {
 							OR (r.language IN ('french_600k', 'english_450k') AND r.mode2 = '25')
 						)
 						AND r.lazyMode = 0
+						AND (
+							r.timestamp >= :start AND r.timestamp < :end
+						)
 			),
 			ranked_results AS (
 				SELECT 
@@ -360,16 +366,26 @@ class DB {
 			FROM ranked_results rr
 			JOIN users u ON rr.uid = u.uid
 			WHERE rr.rn = 1
-			`);
+			ORDER BY language DESC, rr.wpm DESC`,
+			);
 
-			const start = getStartOfMonthTimestamp(new Date().getMonth() - 1);
-			const end = getStartOfMonthTimestamp();
+			const start = Math.floor(
+				getStartOfMonthTimestamp(new Date().getMonth() - 1) / 1000,
+			);
+			const end = Math.floor(getStartOfMonthTimestamp() / 1000);
 
-			return stmt.all({ start, end }).map((row) => ({
+			console.debug(`[DB] Fetching leaderboard for ${uid ?? "all users"}`, {
+				start,
+				end,
+			});
+
+			const bind = uid ? { start, end, uid } : { start, end };
+
+			return stmt.all<LeaderboardMapped>(bind).map((row) => ({
 				...row,
 				isPb: Boolean(row.isPb),
-				time: new Date(Number(row.timestamp)).toLocaleDateString(),
-			}));
+				time: new Date(Number(row.timestamp * 1000)).toLocaleDateString(),
+			})) as LeaderboardMapped[];
 		}
 	}
 

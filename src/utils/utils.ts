@@ -79,3 +79,40 @@ export function updateLeaderboard() {
 		console.error("[Utils] Cannot get users", err);
 	}
 }
+
+export function formatLeaderboard(
+	leaderboard: LeaderboardMapped[],
+	temporary: boolean,
+): string {
+	let content = temporary
+		? `# 🏆 Résultats temporaires 🏆\n\n`
+		: `# 🏆 Résultats du mois 🏆\n\n`;
+
+	function formatPosition(entry, index: number) {
+		content += `${index + 1}. <@${entry.discordId}> : ${entry.wpm} wpm ${
+			entry.isPb ? "**PB 🔥**" : ""
+		}\n`;
+	}
+
+	content += `## FR Stock :\n`;
+	leaderboard.filter((entry) => entry.language === "french").forEach(
+		formatPosition,
+	);
+
+	content += `## FR 600k :\n`;
+	leaderboard.filter((entry) => entry.language === "french_600k").forEach(
+		formatPosition,
+	);
+
+	content += `## EN Stock :\n`;
+	leaderboard.filter((entry) => entry.language === null).forEach(
+		formatPosition,
+	);
+
+	content += `## FR 450k :\n`;
+	leaderboard.filter((entry) => entry.language === "english_450k").forEach(
+		formatPosition,
+	);
+
+	return content;
+}

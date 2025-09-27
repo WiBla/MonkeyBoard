@@ -3,19 +3,33 @@ import {
 	MessageComponentTypes,
 } from "discord-interactions";
 import { Request } from "express";
+import db from "../db.ts";
 import { InteractionResponse } from "../types/discord.d.ts";
-import { buildResponse } from "../utils/utils.ts";
+import { LeaderboardMapped } from "../types/models.d.ts";
+import { buildResponse, formatLeaderboard } from "../utils/utils.ts";
 
+// deno-lint-ignore require-await
 const leaderboard = async (
-	req: Request,
+	_req: Request,
 ): Promise<InteractionResponse> => {
-	const _userId = req.body?.member?.user?.id; // Assumes bot is not used in DMs
+	const leaderboard: LeaderboardMapped[] = db.getLeaderboard();
+	console.log(leaderboard);
+
+	if (!leaderboard || leaderboard.length === 0) {
+		return buildResponse({
+			flags: InteractionResponseFlags.EPHEMERAL,
+			components: [{
+				type: MessageComponentTypes.TEXT_DISPLAY,
+				content: "Aucun score trouvé",
+			}],
+		});
+	}
 
 	return buildResponse({
 		flags: InteractionResponseFlags.EPHEMERAL,
 		components: [{
 			type: MessageComponentTypes.TEXT_DISPLAY,
-			content: "Cette fonctionnalité n'est pas encore implémentée.",
+			content: formatLeaderboard(leaderboard, true),
 		}],
 	});
 };

@@ -36,3 +36,18 @@ type User = {
 	apeKey: string;
 	isActive: boolean;
 };
+
+type Leaderboard = {
+	id: string;
+	name: string;
+	discordId: string;
+	wpm: number;
+	acc: number;
+	language?: string;
+	mode: string;
+	mode2: string;
+	isPb: number;
+	timestamp: number;
+};
+
+type LeaderboardMapped = Leaderboard & { isPb: boolean; time: string };

@@ -3,3 +3,4 @@ data.db
 /node_modules
 /imgs
 src/fakeData
+.apekey

@@ -166,7 +166,7 @@ class Monkey {
 	// Results
 	//=========
 
-	async updateResults() {
+	async updateResults(): Promise<number> {
 		if (!this.uid) {
 			throw new Error(
 				"[Monkey] User must be completed from the DB or the API using 'monkey.completeProfileFrom..'",
@@ -179,13 +179,21 @@ class Monkey {
 			// Otherwise start from the 1st of the month
 			timestamp ??= getStartOfMonthTimestamp();
 
-			const total = await this.getResults(timestamp);
+			const results = await this.getResults(timestamp);
+
+			db.addResults(results.map((result) => ({
+				...result,
+				uid: this.uid!,
+			})));
 
 			console.log(
-				`[Utils] Done saving ${total} new result(s) from this user's monthly activity`,
+				`[Utils] Done saving ${results.length} new result(s) from this user's monthly activity`,
 			);
+
+			return results.length;
 		} catch (err) {
 			console.error("[Utils] Error while updating user results", err);
+			return 0;
 		}
 	}
 

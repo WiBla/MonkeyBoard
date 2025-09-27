@@ -1,7 +1,7 @@
 {
   "name": "monkeyboard",
   "private": true,
-  "version": "2.4.0",
+  "version": "2.5.0",
   "description": "A simple bot that keeps track of you best wpm for the CTC discord server",
   "main": "./src/app.ts",
   "type": "module",
