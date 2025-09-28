@@ -50,4 +50,8 @@ type Leaderboard = {
 	timestamp: number;
 };
 
-type LeaderboardMapped = Leaderboard & { isPb: boolean; time: string };
+type LeaderboardMapped = Leaderboard & {
+	isPb: boolean;
+	time: string;
+	tag_names: string | null;
+};

@@ -82,16 +82,34 @@ export function updateLeaderboard() {
 
 export function formatLeaderboard(
 	leaderboard: LeaderboardMapped[],
-	temporary: boolean,
+	type: "personal" | "temporary" | "monthly",
 ): string {
-	let content = temporary
-		? `# 🏆 Résultats temporaires 🏆\n\n`
-		: `# 🏆 Résultats du mois 🏆\n\n`;
+	let content = "";
+
+	switch (type) {
+		case "personal":
+			content = `# Pronostique de vos résultats actuel\n\n`;
+			break;
+		case "temporary":
+			content = `# Pronostique des résultats du mois en cours\n\n`;
+			break;
+		case "monthly":
+		default:
+			content = `# 🏆 Résultats du mois 🏆\n\n`;
+			break;
+	}
 
 	function formatPosition(entry, index: number) {
-		content += `${index + 1}. <@${entry.discordId}> : ${entry.wpm} wpm ${
-			entry.isPb ? "**PB 🔥**" : ""
-		}\n`;
+		let { discordId, wpm, acc, isPb, tag_names } = entry;
+
+		index++;
+		const prefix = type === "personal" ? "" : `${index++}. <@${discordId}> : `;
+		wpm = Math.floor(wpm);
+		acc = Math.floor(acc);
+		isPb = isPb ? "**PB 🔥**" : "";
+		tag_names = tag_names ? `(${tag_names})` : "";
+
+		content += `${prefix}${wpm} wpm, ${acc}% acc ${isPb} ${tag_names}\n`;
 	}
 
 	content += `## FR Stock :\n`;

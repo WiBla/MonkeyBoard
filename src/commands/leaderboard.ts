@@ -29,7 +29,7 @@ const leaderboard = async (
 		flags: InteractionResponseFlags.EPHEMERAL,
 		components: [{
 			type: MessageComponentTypes.TEXT_DISPLAY,
-			content: formatLeaderboard(leaderboard, true),
+			content: formatLeaderboard(leaderboard, "temporary"),
 		}],
 	});
 };

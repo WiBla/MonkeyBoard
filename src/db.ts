@@ -316,58 +316,61 @@ class DB {
 
 	getLeaderboard(uid?: string): LeaderboardMapped[] {
 		{
-			using stmt = this.db.prepare(
-				`WITH filtered_results AS (
-					SELECT 
-						r.id,
-						r.uid,
-						r.wpm,
-						r.acc,
-						r.mode,
-						r.mode2,
-						r.language,
-						r.isPb,
-						CAST(r.timestamp AS TEXT) AS timestamp
-					FROM results r
-					WHERE
-						${uid ? "r.uid = :uid AND" : ""}
-						r.acc >= 95.5
-						AND r.mode = 'words'
-						AND
-						(
-							((r.language IS NULL OR r.language = 'french') AND r.mode2 = '50')
-							OR (r.language IN ('french_600k', 'english_450k') AND r.mode2 = '25')
-						)
-						AND r.lazyMode = 0
-						AND (
-							r.timestamp >= :start AND r.timestamp < :end
-						)
-			),
-			ranked_results AS (
-				SELECT 
-					fr.*,
-					ROW_NUMBER() OVER (
-						PARTITION BY fr.uid, fr.language
-						ORDER BY fr.wpm DESC
-					) AS rn
-				FROM filtered_results fr
-			)
-			SELECT
-				rr.id,
-				u.name,
-				u.discordId,
-				rr.wpm,
-				rr.acc,
-				rr.language,
-				rr.mode,
-				rr.mode2,
-				rr.isPb,
-				rr.timestamp
-			FROM ranked_results rr
-			JOIN users u ON rr.uid = u.uid
-			WHERE rr.rn = 1
-			ORDER BY language DESC, rr.wpm DESC`,
-			);
+			using stmt = this.db.prepare(`
+WITH filtered_results AS (
+  SELECT 
+    r.id,
+    r.uid,
+    r.wpm,
+    r.acc,
+    r.mode,
+    r.mode2,
+    r.language,
+    r.isPb,
+    r.tags,
+    CAST(r.timestamp AS TEXT) AS timestamp
+  FROM results r
+  WHERE
+    ${uid ? "r.uid = :uid AND" : ""}
+    r.acc >= 95.5
+    AND r.mode = 'words'
+    AND (
+      ((r.language IS NULL OR r.language = 'french') AND r.mode2 = '50')
+      OR (r.language IN ('french_600k', 'english_450k') AND r.mode2 = '25')
+    )
+    AND r.lazyMode = 0
+    AND (
+      r.timestamp >= :start AND r.timestamp < :end
+    )
+),
+ranked_results AS (
+  SELECT 
+    fr.*,
+    ROW_NUMBER() OVER (
+      PARTITION BY fr.uid, fr.language
+      ORDER BY fr.wpm DESC
+    ) AS rn
+  FROM filtered_results fr
+)
+SELECT
+  rr.id,
+  u.name,
+  u.discordId,
+  rr.wpm,
+  rr.acc,
+  rr.language,
+  rr.isPb,
+  rr.timestamp,
+  GROUP_CONCAT(t.name, ', ') AS tag_names
+FROM ranked_results rr
+JOIN users u ON rr.uid = u.uid
+LEFT JOIN json_each(rr.tags) je
+  ON json_valid(rr.tags)
+LEFT JOIN tags t
+  ON t.id = je.value
+WHERE rr.rn = 1
+GROUP BY rr.id, u.name, u.discordId, rr.wpm, rr.acc, rr.language, rr.isPb, rr.timestamp
+ORDER BY rr.language DESC, rr.wpm DESC;`);
 
 			const start = Math.floor(
 				getStartOfMonthTimestamp(new Date().getMonth() - 1) / 1000,
