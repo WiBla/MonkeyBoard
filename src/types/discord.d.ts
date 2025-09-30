@@ -95,6 +95,11 @@ type Component = {
 	type: number;
 	items?: { media: { url: string } }[];
 	content?: string;
+
+	// Deviating from the docs here for easier use
+	components?: Component[];
+	style?: number;
+	label?: string;
 };
 
 /** https://discord.com/developers/docs/interactions/receiving-and-responding#interaction-response-object-messages */

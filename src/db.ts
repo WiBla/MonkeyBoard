@@ -158,6 +158,16 @@ class DB {
 		}
 	}
 
+	userByDiscordIdExists(discordId: string): boolean {
+		{
+			using stmt = this.db.prepare(
+				`SELECT COUNT(*) as count FROM users WHERE discordId = ?`,
+			);
+			const count = stmt.get<{ count: number }>(discordId)?.count || 0;
+			return count > 0;
+		}
+	}
+
 	addUser(
 		user: Monkey,
 	) {
@@ -194,6 +204,13 @@ class DB {
 		);
 	}
 
+	deleteUser(user: Monkey) {
+		this.deleteTags(user.uid!);
+		this.deleteResults(user.uid!);
+		this.db.exec("DELETE FROM users WHERE uid = ?", user.uid);
+		console.log("[DB] User deleted");
+	}
+
 	//======
 	// Tags
 	//======
@@ -217,6 +234,10 @@ class DB {
 
 			console.log(`[DB] ${tags.length} Tag(s) added`);
 		}
+	}
+
+	deleteTags(uid: string) {
+		this.db.exec("DELETE FROM tags WHERE uid = ?", uid);
 	}
 
 	//=========
@@ -401,6 +422,10 @@ ORDER BY rr.language DESC, rr.wpm DESC;`);
 			const ts = stmt.get<{ timestamp: number }>(uid)?.timestamp;
 			return ts === undefined ? ts : ts * 1000;
 		}
+	}
+
+	deleteResults(uid: string) {
+		this.db.exec("DELETE FROM results WHERE uid = ?", uid);
 	}
 }
 

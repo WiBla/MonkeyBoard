@@ -34,8 +34,8 @@ const REGISTER_COMMAND: Command = {
 	...baseCmd,
 };
 
-const FORGET_ME_COMMAND: Command = {
-	name: "forgetme",
+const UNLINK_COMMAND: Command = {
+	name: "unlink",
 	description: "Supprime toutes les données vous concernant",
 	...baseCmd,
 };
@@ -98,7 +98,7 @@ export async function installGlobalCommands(
 
 await installGlobalCommands([
 	REGISTER_COMMAND,
-	FORGET_ME_COMMAND,
+	UNLINK_COMMAND,
 	GET_MY_SCORE_COMMAND,
 	UPDATE_MY_SCORE_COMMAND,
 	LEADERBOARD_COMMAND,

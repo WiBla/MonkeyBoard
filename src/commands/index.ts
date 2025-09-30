@@ -1,9 +1,9 @@
 import { Request } from "express";
 import { InteractionResponse } from "../types/discord.d.ts";
-import forgetme from "./forgetme.ts";
 import getmyscore from "./getmyscore.ts";
 import leaderboard from "./leaderboard.ts";
 import register from "./register.ts";
+import unlink from "./unlink.ts";
 import updatemyscore from "./updatemyscore.ts";
 
 type CommandHandler = {
@@ -12,7 +12,7 @@ type CommandHandler = {
 
 export default {
 	register,
-	forgetme,
+	unlink,
 	getmyscore,
 	updatemyscore,
 	leaderboard,

@@ -3,8 +3,9 @@ import {
 	MessageComponentTypes,
 } from "discord-interactions";
 import { Request } from "express";
+import db from "../db.ts";
 import { InteractionResponse } from "../types/discord.d.ts";
-import { buildResponse, registerUser } from "../utils/utils.ts";
+import { buildResponse, isDev, registerUser } from "../utils/utils.ts";
 
 const register = async (
 	req: Request,
@@ -61,6 +62,18 @@ const register = async (
 	}
 
 	// If ApeKey provided → try to register
+	if (!isDev(userId) && db.userByDiscordIdExists(userId)) {
+		return buildResponse({
+			flags: InteractionResponseFlags.EPHEMERAL,
+			components: [
+				{
+					type: MessageComponentTypes.TEXT_DISPLAY,
+					content: "Vous avez déjà un compte MonkeyBoard enregistré.",
+				},
+			],
+		});
+	}
+
 	const success = await registerUser(userId, ApeKey);
 
 	if (!success) {

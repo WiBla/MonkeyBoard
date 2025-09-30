@@ -47,3 +47,13 @@ export enum ApplicationCommandOptionTypes {
 	/** Attachment object */
 	Attachment,
 }
+
+/** https://discord.com/developers/docs/components/reference#button-button-styles */
+export enum ButtonStyles {
+	Primary = 1,
+	Secondary,
+	Success,
+	Danger,
+	Link,
+	Premium,
+}

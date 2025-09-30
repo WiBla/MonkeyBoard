@@ -6,6 +6,10 @@ import db from "../db.ts";
 import Monkey from "../monkey.ts";
 import { Component, InteractionResponse } from "../types/discord.d.ts";
 
+export function isDev(discordId: string): boolean {
+	return discordId === "106511773581991936";
+}
+
 export function getStartOfMonthTimestamp(month?: number): number {
 	const now = new Date();
 	return new Date(now.getFullYear(), month || now.getMonth(), 1).getTime();
@@ -44,6 +48,25 @@ export async function registerUser(discordId: string, apekey: string) {
 		console.log("[Utils] User registered successfully");
 	} catch (err) {
 		console.error("[Utils] Error while registering user:", err);
+	}
+
+	return success;
+}
+
+export function deleteUser(discordId: string) {
+	let success = false;
+
+	try {
+		const user = db.getUserByDiscordId(discordId);
+		if (!user) throw new Error("User not found in database");
+
+		const monkey = new Monkey(user?.apeKey, Number(discordId));
+		monkey.completeProfileFromDB();
+
+		db.deleteUser(monkey);
+		success = true;
+	} catch (err) {
+		console.error("[Utils] Error while deleting user:", err);
 	}
 
 	return success;
