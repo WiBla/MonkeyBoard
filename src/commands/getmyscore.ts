@@ -22,7 +22,7 @@ const getmyscore = async (
 			components: [{
 				type: MessageComponentTypes.TEXT_DISPLAY,
 				content:
-					"Vous n'avez pas encore lié votre ApeKey. Utilisez la commande /setapikey pour le faire.",
+					"Vous n'avez pas encore lié votre ApeKey. Utilisez la commande /register pour le faire.",
 			}],
 		});
 	}
@@ -34,8 +34,7 @@ const getmyscore = async (
 			flags: InteractionResponseFlags.EPHEMERAL,
 			components: [{
 				type: MessageComponentTypes.TEXT_DISPLAY,
-				content:
-					"Aucun score trouvé pour votre utilisateur. Assurez-vous que votre ApeKey est correcte et que vous avez passé des tests.",
+				content: "Aucun score trouvé",
 			}],
 		});
 	}

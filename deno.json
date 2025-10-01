@@ -17,7 +17,7 @@
 		"run": "deno -P --env-file ./src/app.ts",
 		"dev": "deno --watch -P --env-file ./src/app.ts",
 		"register": "deno -P --env-file ./src/commands/register_commands.ts",
-		"http": "ngrok http 3000"
+		"http": "ngrok http 8080"
 	},
 	"fmt": {
 		"useTabs": true,
