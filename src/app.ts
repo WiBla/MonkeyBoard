@@ -39,6 +39,9 @@ app.post(
 		if (type === InteractionType.APPLICATION_COMMAND) {
 			const { name }: { name: string } = data;
 			const handler = commands[name];
+			const user = req.body?.member?.user;
+
+			console.debug(`[APP] ${user.global_name} /${name}`);
 
 			if (typeof handler !== "function") {
 				console.error(`[APP] Unknown command: ${name}`);
@@ -81,10 +84,10 @@ client.once(Events.ClientReady, (readyClient) => {
 client.login(DISCORD_TOKEN);
 
 // Cron job to get leaderboard every 1st of the month at 9am
-const job = new CronJob(
+new CronJob(
 	"0 9 1 * *",
 	async () => {
-		console.log("Fetching latest leaderboard data..");
+		console.log("[CRON] Fetching latest leaderboard data..");
 
 		try {
 			const { userCount, updateCount } = await updateAll();
@@ -92,7 +95,8 @@ const job = new CronJob(
 				`[UpdateAll] Updated ${updateCount} results for ${userCount} users`,
 			);
 
-			const leaderboard = await client.channels.fetch("1417555936733696050");
+			// const leaderboard = await client.channels.fetch("1417555936733696050"); // test
+			const leaderboard = await client.channels.fetch("1101583276667310180"); // prod
 			const month = new Date().getMonth() - 1;
 
 			if (leaderboard && leaderboard.isTextBased() && "send" in leaderboard) {

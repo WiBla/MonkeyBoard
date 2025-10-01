@@ -50,7 +50,7 @@ type Leaderboard = {
 	timestamp: number;
 };
 
-type LeaderboardMapped = Leaderboard & {
+type LeaderboardMapped = Omit<Leaderboard, "isPb"> & {
 	isPb: boolean;
 	time: string;
 	tag_names: string | null;

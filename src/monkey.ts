@@ -187,12 +187,12 @@ class Monkey {
 			})));
 
 			console.log(
-				`[Utils] Done saving ${results.length} new result(s) from this user's monthly activity`,
+				`[Monkey] Done saving ${results.length} new result(s) from this user's monthly activity`,
 			);
 
 			return results.length;
 		} catch (err) {
-			console.error("[Utils] Error while updating user results", err);
+			console.error("[Monkey] Error while updating user results", err);
 			return 0;
 		}
 	}

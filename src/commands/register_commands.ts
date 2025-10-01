@@ -83,7 +83,6 @@ async function bulkUpdateCommands(commands: Command[]) {
 
 	if (!res.ok) {
 		const data = await res.json();
-		console.log(res.status);
 		throw new Error(JSON.stringify(data));
 	}
 

@@ -55,7 +55,9 @@ const register = async (
 5. Donnez-lui un nom reconnaissable, dans cet exemple "CTC-WPM"
 6. Copiez le contenu de la boîte de dialogue qui apparaît, ceci est votre clé d'authentification. Gardez-la secrète !
 7. Pensez à activer votre clé fraîchement générée
-8. Retapez la commande /register mais indiquez votre clé obtenue à l'étape 6 à la suite du message`,
+8. Retapez la commande \`/register\` mais indiquez cette fois votre clé obtenue à l'étape 6 à la suite du message
+
+_Considérez cette clé comme un **mot de passe**, elle me donne accès à votre compte Monkeytype, mais soyez rassuré : en dehors de voir vos résultats, je ne peux rien faire avec qui puisse compromettre votre profil._`,
 				},
 			],
 		});

@@ -13,7 +13,6 @@ const leaderboard = async (
 	_req: Request,
 ): Promise<InteractionResponse> => {
 	const leaderboard: LeaderboardMapped[] = db.getLeaderboard();
-	console.log(leaderboard);
 
 	if (!leaderboard || leaderboard.length === 0) {
 		return buildResponse({

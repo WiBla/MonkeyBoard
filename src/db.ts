@@ -324,8 +324,8 @@ class DB {
 				} catch (error) {
 					console.error(
 						`[DB] Error while inserting result ${i} of ${results.length} : `,
+						error,
 					);
-					console.error(error);
 					// console.debug(insertStmt);
 					break;
 				}
@@ -339,7 +339,8 @@ class DB {
 		options?: { uid?: string; month?: number },
 	): LeaderboardMapped[] {
 		{
-			const { uid, month } = options ?? {};
+			const { uid } = options ?? {};
+			const month = options?.month || new Date().getMonth();
 
 			using stmt = this.db.prepare(`
 WITH filtered_results AS (
@@ -398,13 +399,11 @@ GROUP BY rr.id, u.name, u.discordId, rr.wpm, rr.acc, rr.language, rr.isPb, rr.ti
 ORDER BY rr.language DESC, rr.wpm DESC;`);
 
 			const start = Math.floor(
-				getStartOfMonthTimestamp((month ?? 1) - 1) / 1000,
+				getStartOfMonthTimestamp(month) / 1000,
 			);
 			const end = Math.floor(
-				getStartOfMonthTimestamp(month ?? 1) / 1000,
+				getStartOfMonthTimestamp(month + 1) / 1000,
 			);
-
-			console.debug({ start, end, options });
 
 			console.debug(
 				`[DB] Fetching leaderboard for ${uid ?? "all users"} for the month ${

@@ -28,7 +28,6 @@ const getmyscore = async (
 	}
 
 	const leaderboard: LeaderboardMapped[] = db.getLeaderboard({ uid: user.uid });
-	console.log(leaderboard);
 
 	if (!leaderboard || leaderboard.length === 0) {
 		return buildResponse({

@@ -1,7 +1,10 @@
+# env files
 .env
-data.db
+.apekey
+# DB files
+*.db
+*.sqbpro
+# misc
 /node_modules
 /imgs
 src/fakeData
-.apekey
-data.sqbpro

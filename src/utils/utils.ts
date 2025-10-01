@@ -144,17 +144,17 @@ export function formatLeaderboard(
 			break;
 	}
 
-	function formatPosition(entry, index: number) {
-		let { discordId, wpm, acc, isPb, tag_names } = entry;
+	function formatPosition(entry: LeaderboardMapped, index: number) {
+		let { discordId, wpm, acc, isPb, tag_names }: LeaderboardMapped = entry;
 
 		index++;
 		const prefix = type === "personal" ? "" : `${index++}. <@${discordId}> : `;
 		wpm = Math.floor(wpm);
 		acc = Math.floor(acc);
-		isPb = isPb ? "**PB 🔥**" : "";
-		tag_names = tag_names ? `(${tag_names})` : "";
+		const pbStr = isPb ? " **PB🔥**" : "";
+		tag_names = tag_names ? ` (${tag_names})` : "";
 
-		content += `${prefix}${wpm} wpm, ${acc}% acc ${isPb} ${tag_names}\n`;
+		content += `${prefix}${wpm} wpm, ${acc}% acc${pbStr}${tag_names}\n`;
 	}
 
 	content += `## FR Stock :\n`;
@@ -172,7 +172,7 @@ export function formatLeaderboard(
 		formatPosition,
 	);
 
-	content += `## FR 450k :\n`;
+	content += `## EN 450k :\n`;
 	leaderboard.filter((entry) => entry.language === "english_450k").forEach(
 		formatPosition,
 	);
