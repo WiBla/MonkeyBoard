@@ -357,7 +357,7 @@ WITH filtered_results AS (
     CAST(r.timestamp AS TEXT) AS timestamp
   FROM results r
   WHERE
-    ${uid ? "r.uid = :uid AND" : ""}
+    ${uid !== undefined ? "r.uid = :uid AND\n" : ""}
     r.acc >= 95.5
     AND r.mode = 'words'
     AND (
@@ -407,10 +407,11 @@ ORDER BY rr.language DESC, rr.wpm DESC;`);
 
 			console.debug(
 				`[DB] Fetching leaderboard for ${uid ?? "all users"} for the month ${
-					getMonthName(month ?? 1)
+					getMonthName(month)
 				}`,
 			);
 
+			// Necessary because SQLite will check if each parameter is in the query and error if not
 			const bind = uid ? { start, end, uid } : { start, end };
 
 			return stmt.all<LeaderboardMapped>(bind).map((row) => ({
