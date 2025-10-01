@@ -27,7 +27,7 @@ const getmyscore = async (
 		});
 	}
 
-	const leaderboard: LeaderboardMapped[] = db.getLeaderboard(user.uid);
+	const leaderboard: LeaderboardMapped[] = db.getLeaderboard({ uid: user.uid });
 	console.log(leaderboard);
 
 	if (!leaderboard || leaderboard.length === 0) {

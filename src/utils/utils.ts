@@ -11,8 +11,17 @@ export function isDev(discordId: string): boolean {
 }
 
 export function getStartOfMonthTimestamp(month?: number): number {
+	if (month !== undefined && (month < 0 || month > 11)) {
+		throw new Error("Month must be between 0 and 11");
+	}
+
 	const now = new Date();
 	return new Date(now.getFullYear(), month || now.getMonth(), 1).getTime();
+}
+
+export function getMonthName(month: number): string {
+	const monthName = new Date(0, month).toLocaleString("fr", { month: "long" });
+	return monthName.charAt(0).toUpperCase() + monthName.slice(1);
 }
 
 export function buildResponse({
@@ -72,53 +81,66 @@ export function deleteUser(discordId: string) {
 	return success;
 }
 
-export function updateLeaderboard() {
+export async function updateAll(): Promise<
+	{ userCount: number; updateCount: number }
+> {
+	let userCount = 0;
+	let updateCount = 0;
+
 	try {
 		const users = db.getAllUsers();
-		const promises = [];
 
 		for (const dbUser of users) {
-			promises.push(
-				async () => {
-					try {
-						const user = new Monkey(dbUser.apekey);
-						const isKeyValid = await user.isKeyValid();
+			try {
+				userCount++;
+				const user = new Monkey(dbUser.apeKey);
+				const isKeyValid = await user.isKeyValid();
 
-						if (!isKeyValid) {
-							throw new Error("Invalid ApeKey for user" + dbUser.apeKey);
-						}
+				if (!isKeyValid) {
+					throw new Error("Invalid ApeKey for user" + dbUser.apeKey);
+				}
 
-						user.completeProfileFromDB();
-						user.updateResults();
-					} catch (error) {
-						console.error("[Utils] Error while updating leaderboard", error);
-					}
-				},
-			);
+				user.completeProfileFromDB();
+				const results = await user.updateResults();
+				if (results > 1) updateCount += results;
+			} catch (error) {
+				console.error("[Utils] Error while updating leaderboard", error);
+			}
 		}
-
-		Promise.allSettled(promises);
 	} catch (err) {
 		console.error("[Utils] Cannot get users", err);
 	}
+
+	return { userCount, updateCount };
 }
 
 export function formatLeaderboard(
 	leaderboard: LeaderboardMapped[],
 	type: "personal" | "temporary" | "monthly",
+	month: number = new Date().getMonth(),
 ): string {
+	if (!leaderboard || leaderboard.length === 0) {
+		return "Aucun résultat à afficher.";
+	}
+
 	let content = "";
 
 	switch (type) {
 		case "personal":
-			content = `# Pronostique de vos résultats actuel\n\n`;
+			content = `# Résultats ${getMonthName(month)} ${
+				new Date().getFullYear()
+			} (vos scores uniquement) 🏆\n\n`;
 			break;
 		case "temporary":
-			content = `# Pronostique des résultats du mois en cours\n\n`;
+			content = `# Résultats ${getMonthName(month)} ${
+				new Date().getFullYear()
+			} (temporaires) 🏆\n\n`;
 			break;
 		case "monthly":
 		default:
-			content = `# 🏆 Résultats du mois 🏆\n\n`;
+			content = `# 🏆 Résultats ${getMonthName(month)} ${
+				new Date().getFullYear()
+			} 🏆\n\n`;
 			break;
 	}
 

@@ -1,6 +1,6 @@
 import { Database } from "@db/sqlite";
 import Monkey from "./monkey.ts";
-import { getStartOfMonthTimestamp } from "./utils/utils.ts";
+import { getMonthName, getStartOfMonthTimestamp } from "./utils/utils.ts";
 
 class DB {
 	public db: Database;
@@ -140,8 +140,8 @@ class DB {
 	// Users
 	//=======
 
-	getAllUsers() {
-		return this.db.prepare("SELECT * from users where 1 limit 100").all();
+	getAllUsers(): User[] {
+		return this.db.prepare("SELECT * from users where 1 limit 100").all<User>();
 	}
 
 	getUserByToken(token: string): User | undefined {
@@ -335,8 +335,12 @@ class DB {
 		}
 	}
 
-	getLeaderboard(uid?: string): LeaderboardMapped[] {
+	getLeaderboard(
+		options?: { uid?: string; month?: number },
+	): LeaderboardMapped[] {
 		{
+			const { uid, month } = options ?? {};
+
 			using stmt = this.db.prepare(`
 WITH filtered_results AS (
   SELECT 
@@ -394,14 +398,19 @@ GROUP BY rr.id, u.name, u.discordId, rr.wpm, rr.acc, rr.language, rr.isPb, rr.ti
 ORDER BY rr.language DESC, rr.wpm DESC;`);
 
 			const start = Math.floor(
-				getStartOfMonthTimestamp(new Date().getMonth() - 1) / 1000,
+				getStartOfMonthTimestamp((month ?? 1) - 1) / 1000,
 			);
-			const end = Math.floor(getStartOfMonthTimestamp() / 1000);
+			const end = Math.floor(
+				getStartOfMonthTimestamp(month ?? 1) / 1000,
+			);
 
-			console.debug(`[DB] Fetching leaderboard for ${uid ?? "all users"}`, {
-				start,
-				end,
-			});
+			console.debug({ start, end, options });
+
+			console.debug(
+				`[DB] Fetching leaderboard for ${uid ?? "all users"} for the month ${
+					getMonthName(month ?? 1)
+				}`,
+			);
 
 			const bind = uid ? { start, end, uid } : { start, end };
 

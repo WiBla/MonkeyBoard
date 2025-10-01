@@ -4,7 +4,7 @@ import {
 	ApplicationCommandTypes,
 	DiscordApplicationIntegrationType,
 	DiscordInteractionContextType,
-} from "./discord.ts";
+} from "../utils/discord.ts";
 
 const APP_ID = Deno.env.get("APP_ID");
 const DISCORD_TOKEN = Deno.env.get("DISCORD_TOKEN");
@@ -58,6 +58,12 @@ const LEADERBOARD_COMMAND: Command = {
 	...baseCmd,
 };
 
+const UPDATEALL_COMMAND: Command = {
+	name: "updateall",
+	description: "Met à jour tous les scores",
+	...baseCmd,
+};
+
 async function bulkUpdateCommands(commands: Command[]) {
 	const url = `https://discord.com/api/v10/applications/${APP_ID}/commands`;
 	const options = {
@@ -102,4 +108,5 @@ await installGlobalCommands([
 	GET_MY_SCORE_COMMAND,
 	UPDATE_MY_SCORE_COMMAND,
 	LEADERBOARD_COMMAND,
+	UPDATEALL_COMMAND,
 ]);
