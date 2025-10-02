@@ -1,11 +1,12 @@
 {
 	"imports": {
-		"@db/sqlite": "jsr:@db/sqlite@^0.12.0"
+		"@db/sqlite": "jsr:@db/sqlite@^0.12.0",
+		"@std/path": "jsr:@std/path@^1.1.2"
 	},
 	"permissions": {
 		"default": {
 			"env": true,
-			"read": [".env", "C:/Users/WiBla/AppData/Local/deno/plug"],
+			"read": [".env", "C:/Users/WiBla/AppData/Local/deno/plug", "./src/commands"],
 			"net": true,
 
 			"sys": true,
@@ -16,8 +17,9 @@
 	"tasks": {
 		"run": "deno -P --env-file ./src/app.ts",
 		"dev": "deno --watch -P --env-file ./src/app.ts",
+		"dev2": "deno --watch -P --env-file ./src/index.ts",
 		"register": "deno -P --env-file ./src/commands/register_commands.ts",
-		"http": "ngrok http 8080"
+		"register2": "deno -P --watch --env-file ./src/deploy-commands.ts"
 	},
 	"fmt": {
 		"useTabs": true,
