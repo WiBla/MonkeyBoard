@@ -1,6 +1,6 @@
 # env files
 .env
-.env.debug
+.env.*
 # DB files
 *.db
 *.sqbpro

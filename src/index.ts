@@ -1,12 +1,5 @@
 import * as path from "@std/path";
-import {
-	BaseInteraction,
-	Client,
-	Collection,
-	Events,
-	GatewayIntentBits,
-	MessageFlags,
-} from "discord.js";
+import { Client, Collection, GatewayIntentBits } from "discord.js";
 import { TSClient } from "./types/client.ts";
 
 // #region Basic setup
@@ -23,9 +16,10 @@ if (!DISCORD_TOKEN || !PUBLIC_KEY) {
 console.log("[BOT] Starting up client...");
 
 const client = new Client({ intents: [GatewayIntentBits.Guilds] }) as TSClient;
-client.commands = new Collection();
 
+// #region Auto attach commands
 const commandsFolders = path.join(Deno.cwd(), "src/commands");
+client.commands = new Collection();
 
 for await (const folder of Deno.readDir(commandsFolders)) {
 	if (!folder.isDirectory) continue;
@@ -49,43 +43,25 @@ for await (const folder of Deno.readDir(commandsFolders)) {
 		}
 	}
 }
+// #endregion Auto attach commands
 
-client.on(Events.InteractionCreate, async (interaction: BaseInteraction) => {
-	console.debug(interaction);
-	if (!interaction.isChatInputCommand()) return;
+// #region Auto Event handling
+const eventFiles = path.join(Deno.cwd(), "src/events");
 
-	const command = (interaction.client as TSClient).commands.get(
-		interaction.commandName,
-	);
+for await (const file of Deno.readDir(eventFiles)) {
+	if (!file.isFile || !file.name.endsWith(".ts")) continue;
 
-	if (!command) {
-		console.error(`No command matching ${interaction.commandName} was found.`);
-		return;
+	const filePath = path.join(eventFiles, file.name);
+	const eventModule = await import(`file://${filePath}`);
+	const event = eventModule.default ?? eventModule;
+
+	if (event.once) {
+		client.once(event.name, (...args) => event.execute(...args));
+	} else {
+		client.on(event.name, (...args) => event.execute(...args));
 	}
-
-	try {
-		await command.execute(interaction);
-	} catch (error) {
-		console.error("[BOT]", error);
-		if (interaction.replied || interaction.deferred) {
-			await interaction.followUp({
-				content: "There was an error whlie executing this command!",
-				flags: MessageFlags.Ephemeral,
-			});
-		} else {
-			await interaction.reply({
-				content: "There was an error while executing this command!",
-				flags: MessageFlags.Ephemeral,
-			});
-		}
-	}
-
-	console.log("[BOT]", interaction);
-});
-
-client.once(Events.ClientReady, (readyClient) => {
-	console.log(`[BOT] Logged in as ${readyClient.user.tag}`);
-});
+}
+// #endregion Auto Event handling
 
 client.login(DISCORD_TOKEN);
 // #endregion Create Discord client
