@@ -180,6 +180,7 @@ class Monkey {
 			timestamp ??= getStartOfMonthTimestamp();
 
 			const results = await this.getResults(timestamp);
+			const trueResults = results.length - 1; // API always returns the result from the timestamp
 
 			db.addResults(results.map((result) => ({
 				...result,
@@ -187,10 +188,10 @@ class Monkey {
 			})));
 
 			console.log(
-				`[Monkey] Done saving ${results.length} new result(s) from this user's monthly activity`,
+				`[Monkey] Done saving ${trueResults} new result(s) from this user's monthly activity`,
 			);
 
-			return results.length;
+			return trueResults;
 		} catch (err) {
 			console.error("[Monkey] Error while updating user results", err);
 			return 0;

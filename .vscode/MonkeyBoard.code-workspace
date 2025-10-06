@@ -22,61 +22,41 @@
     "version": "0.2.0",
     "configurations": [{
       "request": "launch",
-      "name": "Run app",
+      "name": "Run prod",
       "type": "node",
-      "program": "${workspaceFolder}/src/app.ts",
+      "program": "${workspaceFolder}/src/index.ts",
       "cwd": "${workspaceFolder}",
       "env": {},
       "runtimeExecutable": "C:\\Users\\WiBla\\.deno\\bin\\deno.EXE",
       "runtimeArgs": [
         "run",
-        "-P",
-        "--watch",
-        "--inspect-wait",
-        "--env-file",
+        "prod"
       ],
       "attachSimplePort": 9229
     }, {
       "request": "launch",
-      "name": "Register commands",
+      "name": "Register dev commands",
       "type": "node",
       "program": "${workspaceFolder}/src/deploy-commands.ts",
       "cwd": "${workspaceFolder}",
-      "env": {
-        "APP_ID": "",
-        "DISCORD_TOKEN": "",
-        "PUBLIC_KEY": ""
-      },
+      "env": {},
       "runtimeExecutable": "C:\\Users\\WiBla\\.deno\\bin\\deno.EXE",
       "runtimeArgs": [
         "run",
-        "--allow-read",
-        "--allow-env",
-        "--allow-net",
-        "--inspect-wait",
-        "--env-file",
+        "register_dev"
       ],
       "attachSimplePort": 9229
       }, {
         "request": "launch",
-        "name": "Run discord.js",
+        "name": "Run dev",
         "type": "node",
-        "program": "${workspaceFolder}/src/index.ts",
+        "program": "",
         "cwd": "${workspaceFolder}",
-        "env": {
-          "APP_ID": "",
-          "DISCORD_TOKEN": "",
-          "PUBLIC_KEY": ""
-        },
+        "env": {},
         "runtimeExecutable": "C:\\Users\\WiBla\\.deno\\bin\\deno.EXE",
         "runtimeArgs": [
           "run",
-          "--inspect-wait",
-          "--allow-read",
-          "--allow-env",
-          "--allow-net",
-          // "--watch",
-          "--env-file",
+          "dev",
       ],
       "attachSimplePort": 9229
     }]

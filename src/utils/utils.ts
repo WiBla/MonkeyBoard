@@ -1,12 +1,9 @@
-import {
-	InteractionResponseFlags,
-	InteractionResponseType,
-} from "discord-interactions";
 import db from "../db.ts";
 import Monkey from "../monkey.ts";
-import { Component, InteractionResponse } from "../types/discord.d.ts";
 
-export function isDev(discordId: string): boolean {
+export const isProd = Deno.env.get("APP_ID") === "1417277586618323006";
+
+export function isUserDev(discordId: string): boolean {
 	return discordId === "106511773581991936";
 }
 
@@ -22,21 +19,6 @@ export function getStartOfMonthTimestamp(month?: number): number {
 export function getMonthName(month: number): string {
 	const monthName = new Date(0, month).toLocaleString("fr", { month: "long" });
 	return monthName.charAt(0).toUpperCase() + monthName.slice(1);
-}
-
-export function buildResponse({
-	type = InteractionResponseType.CHANNEL_MESSAGE_WITH_SOURCE,
-	flags = 0,
-	components,
-}: {
-	type?: number;
-	flags: number;
-	components: Component[];
-}): InteractionResponse {
-	// Add component V2 by default
-	flags |= InteractionResponseFlags.IS_COMPONENTS_V2;
-
-	return { type, data: { flags, components } };
 }
 
 export async function registerUser(discordId: string, apekey: string) {
@@ -102,7 +84,7 @@ export async function updateAll(): Promise<
 
 				user.completeProfileFromDB();
 				const results = await user.updateResults();
-				if (results > 1) updateCount += results;
+				updateCount += results;
 			} catch (error) {
 				console.error("[Utils] Error while updating leaderboard", error);
 			}

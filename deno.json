@@ -15,11 +15,10 @@
 		}
 	},
 	"tasks": {
-		"prod": "deno -P --env-file ./src/app.ts",
-		"dev": "deno --watch -P --env-file ./src/app.ts",
-		"dev2": "deno --watch -P --env-file=.env.dev ./src/index.ts",
-		"register": "deno -P --env-file ./src/commands/register_commands.ts",
-		"register2": "deno -P --env-file=.env.dev ./src/deploy-commands.ts"
+		"prod": "deno -P --env-file ./src/index.ts",
+		"dev": "deno --watch --inspect-wait -P --env-file=.env.dev ./src/index.ts",
+		"register_prod": "deno -P --env-file ./src/deploy-commands.ts",
+		"register_dev": "deno -P --env-file=.env.dev ./src/deploy-commands.ts"
 	},
 	"fmt": {
 		"useTabs": true,

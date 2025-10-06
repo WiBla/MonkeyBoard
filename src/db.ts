@@ -1,12 +1,18 @@
 import { Database } from "@db/sqlite";
 import Monkey from "./monkey.ts";
-import { getMonthName, getStartOfMonthTimestamp } from "./utils/utils.ts";
+import {
+	getMonthName,
+	getStartOfMonthTimestamp,
+	isProd,
+} from "./utils/utils.ts";
 
 class DB {
 	public db: Database;
 
+	// #region Base operations
 	constructor() {
-		this.db = new Database("./data.db");
+		this.db = new Database(isProd ? "./data.db" : "./data-dev.db");
+		console.debug(`[DB] Running in ${isProd ? "PROD" : "DEV"} mode.`);
 
 		this.createTables();
 		this.verifyTables();
@@ -135,11 +141,9 @@ class DB {
 		this.db.close();
 		console.log("[DB] Closed");
 	}
+	// #endregion Base operations
 
-	//=======
-	// Users
-	//=======
-
+	// #region Users
 	getAllUsers(): User[] {
 		return this.db.prepare("SELECT * from users where 1 limit 100").all<User>();
 	}
@@ -210,11 +214,9 @@ class DB {
 		this.db.exec("DELETE FROM users WHERE uid = ?", user.uid);
 		console.log("[DB] User deleted");
 	}
+	// #endregion Users
 
-	//======
-	// Tags
-	//======
-
+	// #region Tags
 	addTags(tags: Tag[]) {
 		{
 			using insertStmt = this.db.prepare(`
@@ -239,11 +241,9 @@ class DB {
 	deleteTags(uid: string) {
 		this.db.exec("DELETE FROM tags WHERE uid = ?", uid);
 	}
+	//#endregion Tags
 
-	//=========
-	// Results
-	//=========
-
+	// #region Results
 	addResults(results: Result[]) {
 		{
 			using insertStmt = this.db.prepare(`
@@ -331,7 +331,7 @@ class DB {
 				}
 			}
 
-			console.log(`[DB] ${results.length} Result(s) added`);
+			console.log(`[DB] ${results.length - 1} Result(s) added`);
 		}
 	}
 
@@ -436,6 +436,7 @@ ORDER BY rr.language DESC, rr.wpm DESC;`);
 	deleteResults(uid: string) {
 		this.db.exec("DELETE FROM results WHERE uid = ?", uid);
 	}
+	//#endregion Results
 }
 
 export default new DB();

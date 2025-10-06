@@ -1,9 +1,9 @@
 {
   "name": "monkeyboard",
   "private": true,
-  "version": "2.7.1",
+  "version": "3.0.0",
   "description": "A simple bot that keeps track of you best wpm for the CTC discord server",
-  "main": "./src/app.ts",
+  "main": "./src/index.ts",
   "type": "module",
   "engines": {
     "node": ">=18.x"
@@ -13,12 +13,9 @@
   "dependencies": {
     "cron": "^4.3.3",
     "discord-api-types": "^0.38.26",
-    "discord-interactions": "^4.0.0",
-    "discord.js": "^14.22.1",
-    "express": "^5.1.0"
+    "discord.js": "^14.22.1"
   },
   "devDependencies": {
-    "@types/express": "^5.0.3",
     "@types/node": "^24.5.2"
   }
 }

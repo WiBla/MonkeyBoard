@@ -5,6 +5,9 @@ export default {
 	name: Events.InteractionCreate,
 	async execute(interaction: BaseInteraction) {
 		if (!interaction.isChatInputCommand()) return;
+		console.debug(
+			`[CMD] ${interaction.user.globalName} /${interaction.commandName}`,
+		);
 
 		const command = (interaction.client as TSClient).commands.get(
 			interaction.commandName,

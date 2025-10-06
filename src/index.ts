@@ -1,6 +1,9 @@
 import * as path from "@std/path";
-import { Client, Collection, GatewayIntentBits } from "discord.js";
+import { CronJob } from "cron";
+import { Client, Collection, GatewayIntentBits, TextChannel } from "discord.js";
+import db from "./db.ts";
 import { TSClient } from "./types/client.ts";
+import { formatLeaderboard, isProd, updateAll } from "./utils/utils.ts";
 
 // #region Basic setup
 const DISCORD_TOKEN = Deno.env.get("DISCORD_TOKEN");
@@ -66,3 +69,40 @@ for await (const file of Deno.readDir(eventFiles)) {
 
 client.login(DISCORD_TOKEN);
 // #endregion Create Discord client
+
+// Cron job to get leaderboard every 1st of the month at 9am
+new CronJob(
+	"0 9 1 * *",
+	async () => {
+		console.log("[CRON] Fetching latest leaderboard data..");
+
+		try {
+			const { userCount, updateCount } = await updateAll();
+			console.log(
+				`[UpdateAll] Updated ${updateCount} results for ${userCount} users`,
+			);
+
+			const leaderboardId = isProd
+				? "1101583276667310180"
+				: "1417555936733696050";
+			const leaderboard = await client.channels.fetch(leaderboardId);
+			const month = new Date().getMonth() - 1;
+
+			if (leaderboard && leaderboard.isTextBased() && "send" in leaderboard) {
+				const leaderboardResult: LeaderboardMapped[] = db.getLeaderboard({
+					month,
+				});
+
+				await (leaderboard as TextChannel).send(formatLeaderboard(
+					leaderboardResult,
+					"monthly",
+					month,
+				));
+			}
+		} catch (error) {
+			console.error("[BOT] Error creating monthly leaderboard", error);
+		}
+	},
+	null,
+	true,
+);
