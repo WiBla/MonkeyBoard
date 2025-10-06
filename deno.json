@@ -19,7 +19,7 @@
 		"dev": "deno --watch -P --env-file ./src/app.ts",
 		"dev2": "deno --watch -P --env-file=.env.dev ./src/index.ts",
 		"register": "deno -P --env-file ./src/commands/register_commands.ts",
-		"register2": "deno -P --watch --env-file ./src/deploy-commands.ts"
+		"register2": "deno -P --env-file=.env.dev ./src/deploy-commands.ts"
 	},
 	"fmt": {
 		"useTabs": true,

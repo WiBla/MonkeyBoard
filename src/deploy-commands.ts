@@ -48,7 +48,7 @@ try {
 	const data = await rest.put(
 		// TODO check for dev or prod env
 		Routes.applicationGuildCommands(APP_ID, "657335250220744714"),
-		{ body: [] },
+		{ body: commands },
 	);
 	console.log(
 		`[DEPLOY-CMDS] Successfully reloaded ${

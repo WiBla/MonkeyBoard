@@ -3,8 +3,8 @@ import { Command } from "../../types/commands.ts";
 
 export default {
 	data: new SlashCommandBuilder()
-		.setName("ping")
-		.setDescription("Replies with Pong!"),
+		.setName("unlink")
+		.setDescription("Supprimez votre compte et toutes ses données"),
 	async execute(interaction: ChatInputCommandInteraction) {
 		await interaction.reply("Pong!");
 	},

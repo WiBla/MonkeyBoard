@@ -2,14 +2,10 @@ import { ChatInputCommandInteraction, SlashCommandBuilder } from "discord.js";
 import { Command } from "../../types/commands.ts";
 
 export default {
+	cooldown: 1800, // 30 mins
 	data: new SlashCommandBuilder()
-		.setName("register")
-		.setDescription("Liez votre compte Monkeytype")
-		.addStringOption((option) =>
-			option.setName("apekey").setDescription(
-				"Une clé d'authentification généré depuis le site",
-			)
-		),
+		.setName("updatemyscore")
+		.setDescription("Met à jours vos scores"),
 	async execute(interaction: ChatInputCommandInteraction) {
 		await interaction.reply("Pong!");
 	},

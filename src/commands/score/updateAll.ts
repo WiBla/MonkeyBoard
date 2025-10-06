@@ -3,13 +3,8 @@ import { Command } from "../../types/commands.ts";
 
 export default {
 	data: new SlashCommandBuilder()
-		.setName("register")
-		.setDescription("Liez votre compte Monkeytype")
-		.addStringOption((option) =>
-			option.setName("apekey").setDescription(
-				"Une clé d'authentification généré depuis le site",
-			)
-		),
+		.setName("updateall")
+		.setDescription("(Dev only) Met à jours les scores de tout le monde"),
 	async execute(interaction: ChatInputCommandInteraction) {
 		await interaction.reply("Pong!");
 	},

@@ -20,6 +20,7 @@ const client = new Client({ intents: [GatewayIntentBits.Guilds] }) as TSClient;
 // #region Auto attach commands
 const commandsFolders = path.join(Deno.cwd(), "src/commands");
 client.commands = new Collection();
+client.cooldowns = new Collection();
 
 for await (const folder of Deno.readDir(commandsFolders)) {
 	if (!folder.isDirectory) continue;
