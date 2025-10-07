@@ -30,6 +30,7 @@
       "runtimeExecutable": "C:\\Users\\WiBla\\.deno\\bin\\deno.EXE",
       "runtimeArgs": [
         "run",
+        "--inspect-wait",
         "prod"
       ],
       "attachSimplePort": 9229
@@ -43,6 +44,7 @@
       "runtimeExecutable": "C:\\Users\\WiBla\\.deno\\bin\\deno.EXE",
       "runtimeArgs": [
         "run",
+        "--inspect-wait",
         "register_dev"
       ],
       "attachSimplePort": 9229
@@ -56,6 +58,7 @@
         "runtimeExecutable": "C:\\Users\\WiBla\\.deno\\bin\\deno.EXE",
         "runtimeArgs": [
           "run",
+          "--inspect-wait",
           "dev",
       ],
       "attachSimplePort": 9229

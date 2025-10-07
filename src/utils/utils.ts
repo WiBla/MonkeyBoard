@@ -98,7 +98,7 @@ export async function updateAll(): Promise<
 
 export function formatLeaderboard(
 	leaderboard: LeaderboardMapped[],
-	type: "personal" | "temporary" | "monthly",
+	type: "personal" | "temporary" | "monthly" | "daily",
 	month: number = new Date().getMonth(),
 ): string {
 	if (!leaderboard || leaderboard.length === 0) {
@@ -111,12 +111,15 @@ export function formatLeaderboard(
 		case "personal":
 			content = `# Résultats ${getMonthName(month)} ${
 				new Date().getFullYear()
-			} (vos scores uniquement) 🏆\n\n`;
+			} (vos scores uniquement)\n\n`;
 			break;
 		case "temporary":
 			content = `# Résultats ${getMonthName(month)} ${
 				new Date().getFullYear()
-			} (temporaires) 🏆\n\n`;
+			} (temporaires)\n\n`;
+			break;
+		case "daily":
+			content = `Résultats journalier ${getMonthName(month)}\n\n`;
 			break;
 		case "monthly":
 		default:
@@ -136,28 +139,26 @@ export function formatLeaderboard(
 		const pbStr = isPb ? " **PB🔥**" : "";
 		tag_names = tag_names ? ` (${tag_names})` : "";
 
-		content += `${prefix}${wpm} wpm, ${acc}% acc${pbStr}${tag_names}\n`;
+		if (type === "daily") {
+			content += `${prefix}${wpm} wpm ${pbStr}\n`;
+		} else {
+			content += `${prefix}${wpm} wpm, ${acc}% acc${pbStr}${tag_names}\n`;
+		}
 	}
 
-	content += `## FR Stock :\n`;
-	leaderboard.filter((entry) => entry.language === "french").forEach(
-		formatPosition,
-	);
+	const languages: { title: string; filter: string | null }[] = [
+		{ title: "FR Stock", filter: "french" },
+		{ title: "FR 600k", filter: "french_600k" },
+		{ title: "EN Stock", filter: null },
+		{ title: "EN 450k", filter: "english_450k" },
+	];
 
-	content += `## FR 600k :\n`;
-	leaderboard.filter((entry) => entry.language === "french_600k").forEach(
-		formatPosition,
-	);
-
-	content += `## EN Stock :\n`;
-	leaderboard.filter((entry) => entry.language === null).forEach(
-		formatPosition,
-	);
-
-	content += `## EN 450k :\n`;
-	leaderboard.filter((entry) => entry.language === "english_450k").forEach(
-		formatPosition,
-	);
+	for (const language of languages) {
+		content += `${(type === "daily" ? "" : "## ")}${language.title} :\n`;
+		leaderboard.filter((entry) => entry.language === language.filter).forEach(
+			formatPosition,
+		);
+	}
 
 	return content;
 }

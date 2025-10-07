@@ -70,11 +70,12 @@ for await (const file of Deno.readDir(eventFiles)) {
 client.login(DISCORD_TOKEN);
 // #endregion Create Discord client
 
-// Cron job to get leaderboard every 1st of the month at 9am
+// #region Cron jobs
+// Get leaderboard every 1st of the month at 9am
 new CronJob(
 	"0 9 1 * *",
 	async () => {
-		console.log("[CRON] Fetching latest leaderboard data..");
+		console.log("[CRON] Fetching latest leaderboard data...");
 
 		try {
 			const { userCount, updateCount } = await updateAll();
@@ -106,3 +107,48 @@ new CronJob(
 	null,
 	true,
 );
+
+// Post a leaderboard update every day at 9am
+new CronJob(
+	"0 9 * * *",
+	async () => {
+		console.log("[CRON] Updating everyone's score");
+
+		try {
+			const { userCount, updateCount } = await updateAll();
+			console.log(
+				`[UpdateAll] Updated ${updateCount} results for ${userCount} users`,
+			);
+
+			const cooldownChannel = isProd
+				? "1101591223040491682"
+				: "1425221573186682891";
+			const leaderboard = await client.channels.fetch(cooldownChannel);
+			const month = new Date().getMonth();
+
+			if (leaderboard && leaderboard.isTextBased() && "send" in leaderboard) {
+				const leaderboardResult: LeaderboardMapped[] = db.getLeaderboard({
+					month,
+				});
+
+				await (leaderboard as TextChannel).send({
+					content: formatLeaderboard(
+						leaderboardResult,
+						"daily",
+						month,
+					) +
+						"\nVous voulez participer ? N'hésitez pas à lier votre compte avec la commande \`/register\` !",
+					// Do NOT mention anyone
+					allowedMentions: {
+						parse: [],
+					},
+				});
+			}
+		} catch (error) {
+			console.error("[BOT] Error creating daily leaderboard", error);
+		}
+	},
+	null,
+	true,
+);
+// #endregion Cron jobs
