@@ -1,5 +1,6 @@
 import { BaseInteraction, Events } from "discord.js";
 import { confirm } from "../commands/user/unlink.ts";
+import { Event } from "../types/client.ts";
 
 export default {
 	name: Events.InteractionCreate,
@@ -14,4 +15,4 @@ export default {
 			await confirm(interaction);
 		}
 	},
-};
+} as Event;

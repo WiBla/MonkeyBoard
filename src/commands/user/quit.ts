@@ -5,13 +5,13 @@ import {
 } from "discord.js";
 import { db } from "../../index.ts";
 import { Command } from "../../types/client.ts";
-import Monkey from "../../utils/Monkey.ts";
 
 export default {
-	cooldown: 1800, // 30 mins
 	data: new SlashCommandBuilder()
-		.setName("updatemyscore")
-		.setDescription("Met à jours vos scores"),
+		.setName("quitter")
+		.setDescription(
+			"Quittez la compétition. Vous pourrez toujours /rejoindre à tout moment",
+		),
 	async execute(interaction: ChatInputCommandInteraction) {
 		const userId = interaction.user.id;
 
@@ -26,23 +26,21 @@ export default {
 			return;
 		}
 
-		if (user.dnt) {
+		if (user.dnt === 1) {
 			await interaction.reply({
 				flags: MessageFlags.Ephemeral,
-				content:
-					"Vous avez quitté la compétition. Utilisez \`/rejoindre\` si vous souhaitez à nouveau participer !",
+				content: "Vous avez déjà quitté la compétition 👍",
 			});
 			return;
 		}
 
-		const monkey = new Monkey(user.apeKey || "");
-		monkey.completeProfileFromDB();
-		const newResults = await monkey.updateResults();
+		db.setDNT(user, true);
 
 		await interaction.reply({
 			flags: MessageFlags.Ephemeral,
 			content:
-				`Vos scores ont été mis à jour ! ${newResults} nouveaux résultat(s) ont été ajouté(s).`,
+				"Compris 👍 Vos scores ne sont plus trackés. Si vous changez d'avis, faites la commande \`/rejoindre\` !",
 		});
+		return;
 	},
 } as Command;

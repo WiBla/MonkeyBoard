@@ -3,8 +3,8 @@ import {
 	MessageFlags,
 	SlashCommandBuilder,
 } from "discord.js";
-import db from "../../db.ts";
-import { Command } from "../../types/commands.ts";
+import { db } from "../../index.ts";
+import { Command } from "../../types/client.ts";
 import { formatLeaderboard } from "../../utils/utils.ts";
 
 export default {
@@ -20,12 +20,21 @@ export default {
 			await interaction.reply({
 				flags: MessageFlags.Ephemeral,
 				content:
-					"Vous n'avez pas encore lié votre ApeKey. Utilisez la commande /register pour le faire.",
+					"Vous n'avez pas encore lié votre ApeKey. Utilisez la commande \`/register\` pour le faire.",
 			});
 			return;
 		}
 
-		const leaderboard: LeaderboardMapped[] = db.getLeaderboard({
+		if (user.dnt) {
+			await interaction.reply({
+				flags: MessageFlags.Ephemeral,
+				content:
+					"Vous avez quitté la compétition. Utilisez \`/rejoindre\` si vous souhaitez à nouveau participer !",
+			});
+			return;
+		}
+
+		let leaderboard: LeaderboardMapped[] = db.getLeaderboard({
 			uid: user.uid,
 		});
 
@@ -36,6 +45,16 @@ export default {
 			});
 			return;
 		}
+
+		const bestWPMLastMonth = db.getBestWPM(user.uid, new Date().getMonth() - 1);
+		// console.debug(bestWPMLastMonth);
+
+		leaderboard = leaderboard.map((entry) => {
+			const lastPB = bestWPMLastMonth.find((wpm) =>
+				wpm.language === entry.language
+			)?.wpm;
+			return { ...entry, lastPB };
+		}) as LeaderboardWithBestWPM[];
 
 		await interaction.reply({
 			flags: MessageFlags.Ephemeral,

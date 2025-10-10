@@ -1,5 +1,8 @@
-import db from "./db.ts";
-import { getStartOfMonthTimestamp } from "./utils/utils.ts";
+import { db } from "../index.ts";
+import { LastResult, Profile, Tags } from "../types/models.d.ts";
+import { APIResponse } from "../types/monkeytype.d.ts";
+import { APIError, InactiveApeKeyError, InvalidApeKeyError } from "./errors.ts";
+import { getStartOfMonthTimestamp } from "./utils.ts";
 
 class Monkey {
 	// #region Properties
@@ -8,53 +11,64 @@ class Monkey {
 	public token: string;
 	public uid: string | undefined;
 	public name: string | undefined;
-	public discordId: number | undefined;
+	public discordId: string | undefined;
+	public DNT: boolean;
 	// #endregion
 
-	constructor(apekey: string, discordId?: number) {
+	// #region Base operations
+	constructor(apekey: string, discordId?: string) {
 		this.checkToken(apekey);
 
 		this.API_URL = "https://api.monkeytype.com";
 		this.headers = { Authorization: `ApeKey ${apekey}` };
 		this.token = apekey;
 		this.discordId = discordId;
+		this.DNT = false;
 	}
 
 	checkToken(token: string) {
 		const tokenPattern = /^[A-Za-z0-9\-_]{76}$/;
 
 		if (typeof token !== "string" || !tokenPattern.test(token)) {
-			throw new Error("[Monkey] Invalid token format.");
+			throw new InvalidApeKeyError();
 		}
 	}
 
-	async completeProfileFromAPI() {
-		// Check if key is valid and allows us to get their Monkeytype uid
-		const lastResult = await this.getLastResult();
-		if (!lastResult?.uid) throw new Error("Cannot get last result");
+	async completeProfileFromAPI(): Promise<boolean> {
+		try {
+			// Check if key is valid and allows us to get their Monkeytype uid
+			const lastResult = await this.getLastResult();
+			if (!lastResult?.uid) {
+				throw new Error("Cannot get last result", lastResult);
+			}
 
-		// Get user's username
-		const profile = await this.getProfileByID(lastResult.uid);
-		if (!profile?.name) throw new Error("Cannot get profile");
+			// Get user's username
+			const profile = await this.getProfileByID(lastResult.uid);
+			if (!profile?.name) throw new Error("Cannot get profile", profile);
 
-		this.uid = profile.uid;
-		this.name = profile.name;
+			this.uid = profile.uid;
+			this.name = profile.name;
 
-		// Save user to DB
-		db.addUser(this);
+			// Save user to DB
+			db.addUser(this);
 
-		// Get user's tags
-		const tags: Tags[] = await this.getTags();
-		if (tags.length === 0) {
-			console.log("[Monkey] No tags found for this user");
-			return;
-		} else {
-			db.addTags(tags.map((tag) => ({ ...tag, uid: profile.uid })));
+			// Get user's tags
+			const tags: Tags[] = await this.getTags();
+			if (tags.length === 0) {
+				console.log("[Monkey] No tags found for this user");
+			} else {
+				db.addTags(tags.map((tag) => ({ ...tag, uid: profile.uid })));
+			}
+		} catch (err) {
+			console.error("[Monkey] completeProfileFromAPI() failed", err);
+			throw err;
 		}
+
+		return true;
 	}
 
 	completeProfileFromDB() {
-		const user = db.getUserByToken(this.token);
+		const user: User | undefined = db.getUserByToken(this.token);
 
 		if (user === undefined) {
 			throw new Error("[Monkey] User not found");
@@ -63,14 +77,14 @@ class Monkey {
 		this.uid = user.uid;
 		this.name = user.name;
 		this.discordId ??= user.discordId;
+		this.DNT = Boolean(user.dnt);
 	}
 
 	async isKeyValid(token?: string): Promise<boolean> {
 		if (token) this.token = token;
 
 		if (!this.headers) {
-			console.error("[Monkey] No API token set. Use setToken() first.");
-			return Promise.resolve(false);
+			throw new APIError("Unauthorized: API token not set");
 		}
 
 		try {
@@ -85,23 +99,20 @@ class Monkey {
 			}
 
 			if (res.status === 471) {
-				console.error("[Monkey] ApeKey is inactive", this.token);
 				db.setActive(this.token!, false);
-				return false;
+				throw new InactiveApeKeyError();
 			}
 
-			console.error("[Monkey] Unknown HTTP Status code : ", res.status);
-			return false;
+			throw new APIError(`Unexpected HTTP status: ${res.status}`);
 		} catch (err) {
-			console.error("[Monkey] Request error:", err);
-			return false;
+			console.error("[Monkey] isKeyValid() failed", err);
+			throw err;
 		}
 	}
 
 	async get<T>(path: string): Promise<APIResponse<T>> {
 		if (!this.token) {
-			console.error("[Monkey] No API token set. Use setToken() first.");
-			throw new Error("Unauthorized: API token not set");
+			throw new APIError("Unauthorized: API token not set");
 		}
 
 		try {
@@ -109,20 +120,32 @@ class Monkey {
 				method: "GET",
 				headers: this.headers,
 			});
-			if (!res.ok) {
-				throw new Error(`HTTP error! status: ${res.status}`);
+
+			if (res.status === 200) {
+				return await res.json();
 			}
-			return await res.json();
+
+			if (res.status === 471) {
+				try {
+					db.setActive(this.token, false);
+				} catch (err) {
+					console.error(
+						"[Monkey] Error while trying to save user as inactive",
+						err,
+					);
+				}
+				throw new InactiveApeKeyError();
+			}
+
+			throw new APIError(`Unexpected HTTP status: ${res.status}`);
 		} catch (err) {
-			console.error("[Monkey] Request error:", err);
-			return { message: "Request error" } as APIResponse<T>;
+			if (err instanceof InactiveApeKeyError) throw err;
+			throw new APIError("Network or parsing error", err);
 		}
 	}
+	// #endregion Base operations
 
-	//=========
-	// Profile
-	//=========
-
+	// #region Profile
 	async getProfileByID(uid: string): Promise<Profile> {
 		try {
 			const data = await this.get<Profile>(
@@ -146,11 +169,9 @@ class Monkey {
 			return {} as Profile;
 		}
 	}
+	// #endregion Profile
 
-	//======
-	// Tags
-	//======
-
+	// #region Tags
 	async getTags(): Promise<Tags[]> {
 		try {
 			const data = await this.get<APIResponse<Tags[]>>("/users/tags");
@@ -161,11 +182,9 @@ class Monkey {
 			return [] as Tags[];
 		}
 	}
+	// #endregion Tags
 
-	//=========
-	// Results
-	//=========
-
+	// #region Results
 	async updateResults(): Promise<number> {
 		if (!this.uid) {
 			throw new Error(
@@ -215,7 +234,7 @@ class Monkey {
 			return (data?.data ?? []) as Result[];
 		} catch (err) {
 			console.error("[Monkey] Failed to fetch results:", err);
-			return [];
+			throw err;
 		}
 	}
 
@@ -226,9 +245,10 @@ class Monkey {
 			return (data?.data ?? {}) as LastResult;
 		} catch (err) {
 			console.error("[Monkey] Failed to fetch last result:", err);
-			return {} as LastResult;
+			throw err;
 		}
 	}
+	// #endregion Results
 }
 
 export default Monkey;

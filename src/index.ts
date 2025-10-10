@@ -1,18 +1,23 @@
-import * as path from "@std/path";
 import { CronJob } from "cron";
 import { Client, Collection, GatewayIntentBits, TextChannel } from "discord.js";
-import db from "./db.ts";
+import commands from "./commands/index.ts";
+import events from "./events/index.ts";
 import { TSClient } from "./types/client.ts";
-import { formatLeaderboard, isProd, updateAll } from "./utils/utils.ts";
+import DB from "./utils/DB.ts";
+import { formatLeaderboard, updateAll } from "./utils/utils.ts";
 
 // #region Basic setup
 const DISCORD_TOKEN = Deno.env.get("DISCORD_TOKEN");
 const PUBLIC_KEY = Deno.env.get("PUBLIC_KEY");
+const APP_ID = Deno.env.get("APP_ID");
 
-if (!DISCORD_TOKEN || !PUBLIC_KEY) {
+if (!DISCORD_TOKEN || !PUBLIC_KEY || !APP_ID) {
 	console.error(".env file not properly configured");
 	Deno.exit(1);
 }
+
+export const isProd = APP_ID === "1417277586618323006";
+export const db = new DB();
 // #endregion Basic setup
 
 // #region Create Discord client
@@ -20,49 +25,21 @@ console.log("[BOT] Starting up client...");
 
 const client = new Client({ intents: [GatewayIntentBits.Guilds] }) as TSClient;
 
-// #region Auto attach commands
-const commandsFolders = path.join(Deno.cwd(), "src/commands");
+// #region Load commands
 client.commands = new Collection();
 client.cooldowns = new Collection();
 
-for await (const folder of Deno.readDir(commandsFolders)) {
-	if (!folder.isDirectory) continue;
-
-	for await (
-		const file of Deno.readDir(path.join(commandsFolders, folder.name))
-	) {
-		if (!file.isFile || !file.name.endsWith(".ts")) continue;
-
-		const filePath = path.join(commandsFolders, folder.name, file.name);
-		const commandModule = await import(`file://${filePath}`);
-		const command = commandModule.default ?? commandModule;
-
-		if ("data" in command && "execute" in command) {
-			// Set a new item in the Collection with the key as the command name and the value as the exported module
-			client.commands.set(command.data.name, command);
-		} else {
-			console.warn(
-				`[BOT] The command at ${filePath} is missing a required "data" or "execute" property.`,
-			);
-		}
-	}
+for (const command of commands) {
+	client.commands.set(command.data.name, command);
 }
-// #endregion Auto attach commands
+// #endregion Load commands
 
 // #region Auto Event handling
-const eventFiles = path.join(Deno.cwd(), "src/events");
-
-for await (const file of Deno.readDir(eventFiles)) {
-	if (!file.isFile || !file.name.endsWith(".ts")) continue;
-
-	const filePath = path.join(eventFiles, file.name);
-	const eventModule = await import(`file://${filePath}`);
-	const event = eventModule.default ?? eventModule;
-
+for (const event of events) {
 	if (event.once) {
-		client.once(event.name, (...args) => event.execute(...args));
+		client.once(event.name, (e) => event.execute(e));
 	} else {
-		client.on(event.name, (...args) => event.execute(...args));
+		client.on(event.name, (e) => event.execute(e));
 	}
 }
 // #endregion Auto Event handling

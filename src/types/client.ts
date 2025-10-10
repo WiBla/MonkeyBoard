@@ -1,8 +1,28 @@
-import { Client, Collection } from "discord.js";
+import {
+	BaseInteraction,
+	ChatInputCommandInteraction,
+	Client,
+	Collection,
+	SlashCommandBuilder,
+} from "discord.js";
+
+export interface Command {
+	data: SlashCommandBuilder;
+	cooldown?: number;
+	execute: (
+		interaction: ChatInputCommandInteraction,
+	) => Promise<void>;
+}
+
+export interface Event {
+	name: string;
+	once?: boolean;
+	execute:
+		| ((interaction: BaseInteraction) => Promise<void>)
+		| ((client: Client) => Promise<void>);
+}
 
 export type TSClient = Client & {
-	// deno-lint-ignore no-explicit-any
-	commands: Collection<string, any>;
-	// deno-lint-ignore no-explicit-any
-	cooldowns: Collection<string, any>;
+	commands: Collection<string, Command>;
+	cooldowns: Collection<string, Collection<string, number>>;
 };

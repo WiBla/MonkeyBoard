@@ -1,10 +1,8 @@
 import { Database } from "@db/sqlite";
-import Monkey from "./monkey.ts";
-import {
-	getMonthName,
-	getStartOfMonthTimestamp,
-	isProd,
-} from "./utils/utils.ts";
+import { isProd } from "../index.ts";
+import { User } from "../types/models.d.ts";
+import Monkey from "./Monkey.ts";
+import { getMonthName, getStartOfMonthTimestamp } from "./utils.ts";
 
 class DB {
 	public db: Database;
@@ -29,6 +27,7 @@ class DB {
 				"discordId"	TEXT,
 				"apeKey"	TEXT,
 				"isActive"	INTEGER,
+				"dnt"	INTEGER DEFAULT 0,
 				PRIMARY KEY("uid")
 			);
 		`);
@@ -81,6 +80,7 @@ class DB {
 			discordId: "TEXT",
 			apeKey: "TEXT",
 			isActive: "INTEGER",
+			dnt: "INTEGER DEFAULT 0",
 		});
 
 		this.ensureColumns("tags", {
@@ -136,16 +136,15 @@ class DB {
 			}
 		}
 	}
-
-	close() {
-		this.db.close();
-		console.log("[DB] Closed");
-	}
 	// #endregion Base operations
 
 	// #region Users
-	getAllUsers(): User[] {
-		return this.db.prepare("SELECT * from users where 1 limit 100").all<User>();
+	getAllUsers(ignoreDNT = false): User[] {
+		const stmt = `SELECT * from users where ${
+			ignoreDNT ? "1" : "dnt = 0"
+		} limit 100`;
+		console.debug("[DB] Getting all users, ignoreDNT is", ignoreDNT, stmt);
+		return this.db.prepare(stmt).all<User>();
 	}
 
 	getUserByToken(token: string): User | undefined {
@@ -187,9 +186,9 @@ class DB {
 		{
 			using insertStmt = this.db.prepare(`
 		INSERT INTO users (
-			uid, name, discordId, apeKey, isActive
+			uid, name, discordId, apeKey, isActive, dnt
 		)
-		VALUES (:uid, :name, :discordId, :token, 1)
+		VALUES (:uid, :name, :discordId, :token, 1, 0)
 		ON CONFLICT(uid) DO UPDATE SET
 		uid = excluded.uid,
 		name = excluded.name,
@@ -206,6 +205,16 @@ class DB {
 			"UPDATE users SET isActive = :isActive WHERE apeKey = :apeKey",
 			{ isActive, apeKey },
 		);
+	}
+
+	setDNT(user: User, dnt: boolean) {
+		this.db.exec(
+			"UPDATE users SET dnt = :dnt WHERE discordId = :discordId",
+			{ discordId: user.discordId, dnt },
+		);
+
+		user.dnt = dnt ? 1 : 0;
+		user.DNT = dnt;
 	}
 
 	deleteUser(user: Monkey) {
@@ -394,7 +403,7 @@ LEFT JOIN json_each(rr.tags) je
   ON json_valid(rr.tags)
 LEFT JOIN tags t
   ON t.id = je.value
-WHERE rr.rn = 1
+WHERE rr.rn = 1 AND u.dnt = 0
 GROUP BY rr.id, u.name, u.discordId, rr.wpm, rr.acc, rr.language, rr.isPb, rr.timestamp
 ORDER BY rr.language DESC, rr.wpm DESC;`);
 
@@ -433,10 +442,50 @@ ORDER BY rr.language DESC, rr.wpm DESC;`);
 		}
 	}
 
+	getBestWPM(uid: string, month?: number): BestWPM[] {
+		{
+			using stmt = this.db.prepare(
+				`SELECT
+	r.language,
+	max(r.wpm) as wpm
+FROM results r
+WHERE
+	r.uid = :uid
+	AND r.acc >= 95.5
+	AND r.mode = 'words'
+	AND (
+		((r.language IS NULL OR r.language = 'french') AND r.mode2 = '50')
+		OR (r.language IN ('french_600k', 'english_450k') AND r.mode2 = '25')
+	)
+	AND r.lazyMode = 0
+	AND (
+		r.timestamp >= :start AND r.timestamp < :end
+	)
+	group by language`,
+			);
+
+			month = month || new Date().getMonth();
+			const start = Math.floor(
+				getStartOfMonthTimestamp(month) / 1000,
+			);
+			const end = Math.floor(
+				getStartOfMonthTimestamp(month + 1) / 1000,
+			);
+
+			console.debug(
+				`[DB] Fetching best WPM for ${uid ?? "all users"} for the month ${
+					getMonthName(month)
+				}`,
+			);
+
+			return stmt.all<BestWPM>({ uid, start, end });
+		}
+	}
+
 	deleteResults(uid: string) {
 		this.db.exec("DELETE FROM results WHERE uid = ?", uid);
 	}
 	//#endregion Results
 }
 
-export default new DB();
+export default DB;

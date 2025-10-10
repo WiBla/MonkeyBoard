@@ -1,7 +1,7 @@
 import * as path from "@std/path";
 import { Routes } from "discord-api-types/v10";
 import { REST } from "discord.js";
-import { Command } from "./types/commands.ts";
+import { Command } from "./types/client.ts";
 
 // #region Basic setup
 const DISCORD_TOKEN = Deno.env.get("DISCORD_TOKEN");

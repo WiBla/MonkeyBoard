@@ -3,8 +3,8 @@ import {
 	MessageFlags,
 	SlashCommandBuilder,
 } from "discord.js";
-import db from "../../db.ts";
-import { Command } from "../../types/commands.ts";
+import { db } from "../../index.ts";
+import { Command } from "../../types/client.ts";
 import { formatLeaderboard } from "../../utils/utils.ts";
 
 export default {

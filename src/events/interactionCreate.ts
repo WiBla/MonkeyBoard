@@ -1,5 +1,6 @@
 import { BaseInteraction, Collection, Events, MessageFlags } from "discord.js";
 import { TSClient } from "..//types/client.ts";
+import { Event } from "../types/client.ts";
 
 export default {
 	name: Events.InteractionCreate,
@@ -28,13 +29,13 @@ export default {
 		}
 
 		const now = Date.now();
-		const timestamps = cooldowns.get(command.data.name);
+		const timestamps = cooldowns.get(command.data.name) ?? new Collection();
 		const defaultCooldownDuration = 3;
 		const cooldownAmount = (command.cooldown ?? defaultCooldownDuration) *
 			1_000;
 
 		if (timestamps.has(interaction.user.id)) {
-			const expirationTime = timestamps.get(interaction.user.id) +
+			const expirationTime = (timestamps.get(interaction.user.id) ?? 0) +
 				cooldownAmount;
 
 			if (now < expirationTime) {
@@ -68,4 +69,4 @@ export default {
 			}
 		}
 	},
-};
+} as Event;

@@ -3,7 +3,7 @@ import {
 	MessageFlags,
 	SlashCommandBuilder,
 } from "discord.js";
-import { Command } from "../../types/commands.ts";
+import { Command } from "../../types/client.ts";
 import { isUserDev, updateAll } from "../../utils/utils.ts";
 
 export default {

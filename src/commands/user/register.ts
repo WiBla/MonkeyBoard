@@ -5,8 +5,13 @@ import {
 	SlashCommandBuilder,
 	TextDisplayBuilder,
 } from "discord.js";
-import db from "../../db.ts";
-import { Command } from "../../types/commands.ts";
+import { db } from "../../index.ts";
+import { Command } from "../../types/client.ts";
+import {
+	APIError,
+	InactiveApeKeyError,
+	InvalidApeKeyError,
+} from "../../utils/errors.ts";
 import { isUserDev, registerUser } from "../../utils/utils.ts";
 
 export default {
@@ -26,6 +31,14 @@ export default {
 			console.error("[APP] Missing userId in request");
 			return await interaction.reply({
 				content: "Impossible d'identifier l'utilisateur.",
+				flags: MessageFlags.Ephemeral,
+			});
+		}
+
+		// If ApeKey provided → try to register
+		if (!isUserDev(userId) && db.userByDiscordIdExists(userId)) {
+			return await interaction.reply({
+				content: "Vous avez déjà lié votre compte !",
 				flags: MessageFlags.Ephemeral,
 			});
 		}
@@ -68,29 +81,30 @@ _Considérez cette clé comme un **mot de passe**, elle me donne accès à votre
 			});
 		}
 
-		// If ApeKey provided → try to register
-		if (!isUserDev(userId) && db.userByDiscordIdExists(userId)) {
-			return await interaction.reply({
-				content: "Vous avez déjà un compte MonkeyBoard enregistré.",
-				flags: MessageFlags.Ephemeral,
-			});
-		}
-
-		await interaction.reply({
-			content: "Création de votre compte...",
+		await interaction.deferReply({
 			flags: MessageFlags.Ephemeral,
 		});
 
-		const success = await registerUser(userId, ApeKey);
-
-		if (!success) {
-			await interaction.editReply("Vérifiez que votre clé soit valide");
-		} else {
-			await interaction.editReply("Votre compte a bien été enregistré !");
+		try {
+			const success = await registerUser(userId, ApeKey);
+			if (!success) {
+				await interaction.editReply("Vérifiez que votre clé soit valide");
+			} else {
+				await interaction.editReply("Votre compte a bien été enregistré !");
+			}
+		} catch (err) {
+			if (err instanceof InactiveApeKeyError) {
+				await interaction.editReply(
+					"Votre clé est inactive. Activez-la sur Monkeytype avant de réessayer.",
+				);
+			} else if (err instanceof InvalidApeKeyError) {
+				await interaction.editReply("Votre clé est invalide.");
+			} else if (err instanceof APIError) {
+				await interaction.editReply(`Erreur API : ${err.message}`);
+			} else {
+				await interaction.editReply("Une erreur inconnue est survenue.");
+			}
+			console.error("[Register] Error while trying to register user", err);
 		}
-
-		setTimeout(async () => {
-			await interaction.deleteReply();
-		}, 5_000);
 	},
 } as Command;

@@ -8,7 +8,7 @@ import {
 	SlashCommandBuilder,
 	TextDisplayBuilder,
 } from "discord.js";
-import { Command } from "../../types/commands.ts";
+import { Command } from "../../types/client.ts";
 import { deleteUser, isUserDev } from "../../utils/utils.ts";
 
 export default {
@@ -39,8 +39,7 @@ export async function confirm(interaction: ButtonInteraction) {
 		userId = "287702750366662658";
 	}
 
-	await interaction.reply({
-		content: "Deleting your data...",
+	await interaction.deferReply({
 		flags: MessageFlags.Ephemeral,
 	});
 

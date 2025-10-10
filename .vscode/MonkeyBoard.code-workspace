@@ -30,8 +30,9 @@
       "runtimeExecutable": "C:\\Users\\WiBla\\.deno\\bin\\deno.EXE",
       "runtimeArgs": [
         "run",
-        "--inspect-wait",
-        "prod"
+        "-P",
+        "--inspect-brk",
+        "--env-file"
       ],
       "attachSimplePort": 9229
     }, {
@@ -44,22 +45,24 @@
       "runtimeExecutable": "C:\\Users\\WiBla\\.deno\\bin\\deno.EXE",
       "runtimeArgs": [
         "run",
-        "--inspect-wait",
-        "register_dev"
+        "-P",
+        "--inspect-brk",
+        "--env-file=.env.dev"
       ],
       "attachSimplePort": 9229
       }, {
         "request": "launch",
         "name": "Run dev",
         "type": "node",
-        "program": "",
+        "program": "${workspaceFolder}/src/index.ts",
         "cwd": "${workspaceFolder}",
         "env": {},
         "runtimeExecutable": "C:\\Users\\WiBla\\.deno\\bin\\deno.EXE",
         "runtimeArgs": [
           "run",
-          "--inspect-wait",
-          "dev",
+          "-P",
+          "--inspect-brk",
+          "--env-file=.env.dev",
       ],
       "attachSimplePort": 9229
     }]
