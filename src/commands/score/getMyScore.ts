@@ -3,8 +3,8 @@ import {
 	MessageFlags,
 	SlashCommandBuilder,
 } from "discord.js";
-import { db } from "../../index.ts";
 import { Command } from "../../types/client.ts";
+import DB from "../../utils/DB.ts";
 import { formatLeaderboard } from "../../utils/utils.ts";
 
 export default {
@@ -15,7 +15,7 @@ export default {
 		const userId = interaction.user.id;
 
 		// Fetch user data from the database
-		const user = db.getUserByDiscordId(userId);
+		const user = DB.getUserByDiscordId(userId);
 		if (!user) {
 			await interaction.reply({
 				flags: MessageFlags.Ephemeral,
@@ -34,7 +34,7 @@ export default {
 			return;
 		}
 
-		let leaderboard: LeaderboardMapped[] = db.getLeaderboard({
+		let leaderboard: LeaderboardMapped[] = DB.getLeaderboard({
 			uid: user.uid,
 		});
 
@@ -46,7 +46,7 @@ export default {
 			return;
 		}
 
-		const bestWPMLastMonth = db.getBestWPM(user.uid, new Date().getMonth() - 1);
+		const bestWPMLastMonth = DB.getBestWPM(user.uid, new Date().getMonth() - 1);
 		// console.debug(bestWPMLastMonth);
 
 		leaderboard = leaderboard.map((entry) => {

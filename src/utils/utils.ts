@@ -1,5 +1,4 @@
-import { db } from "../index.ts";
-import Monkey from "./Monkey.ts";
+export const isProd = Deno.env.get("APP_ID") === "1417277586618323006";
 
 export function isUserDev(discordId: string): boolean {
 	return discordId === "106511773581991936";
@@ -17,78 +16,6 @@ export function getStartOfMonthTimestamp(month?: number): number {
 export function getMonthName(month: number): string {
 	const monthName = new Date(0, month).toLocaleString("fr", { month: "long" });
 	return monthName.charAt(0).toUpperCase() + monthName.slice(1);
-}
-
-export async function registerUser(
-	discordId: string,
-	apekey: string,
-): Promise<boolean> {
-	try {
-		const user = new Monkey(apekey, discordId);
-		await user.completeProfileFromAPI();
-
-		const results = await user.getResults();
-		db.addResults(results);
-
-		console.log("[Utils] User registered successfully");
-		return true;
-	} catch (err) {
-		console.error("[Utils] Error while registering user", err);
-		throw err;
-	}
-}
-
-export function deleteUser(discordId: string): boolean {
-	let success = false;
-
-	try {
-		const user: User | undefined = db.getUserByDiscordId(discordId);
-		if (!user) throw new Error("User not found in database");
-
-		const monkey = new Monkey(user?.apeKey, discordId);
-		monkey.completeProfileFromDB();
-
-		db.deleteUser(monkey);
-		success = true;
-	} catch (err) {
-		console.error("[Utils] Error while deleting user:", err);
-	}
-
-	return success;
-}
-
-export async function updateAll(): Promise<
-	{ userCount: number; updateCount: number }
-> {
-	let userCount = 0;
-	let updateCount = 0;
-
-	try {
-		const users = db.getAllUsers();
-
-		for (const dbUser of users) {
-			try {
-				userCount++;
-				const user = new Monkey(dbUser.apeKey);
-				const isKeyValid = await user.isKeyValid();
-
-				if (!isKeyValid) {
-					throw new Error("Invalid ApeKey for user" + dbUser.apeKey);
-				}
-
-				user.completeProfileFromDB();
-				const results = await user.updateResults();
-				updateCount += results;
-			} catch (err) {
-				console.error("[Utils] Error while updating leaderboard", err);
-				throw err;
-			}
-		}
-	} catch (err) {
-		console.error("[Utils] Cannot get users", err);
-	}
-
-	return { userCount, updateCount };
 }
 
 function formatLastPB(wpm: number, lastPB: number | null): string {

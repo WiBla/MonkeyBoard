@@ -4,7 +4,7 @@ import commands from "./commands/index.ts";
 import events from "./events/index.ts";
 import { TSClient } from "./types/client.ts";
 import DB from "./utils/DB.ts";
-import { formatLeaderboard, updateAll } from "./utils/utils.ts";
+import { formatLeaderboard, isProd } from "./utils/utils.ts";
 
 // #region Basic setup
 const DISCORD_TOKEN = Deno.env.get("DISCORD_TOKEN");
@@ -15,9 +15,6 @@ if (!DISCORD_TOKEN || !PUBLIC_KEY || !APP_ID) {
 	console.error(".env file not properly configured");
 	Deno.exit(1);
 }
-
-export const isProd = APP_ID === "1417277586618323006";
-export const db = new DB();
 // #endregion Basic setup
 
 // #region Create Discord client
@@ -55,7 +52,7 @@ new CronJob(
 		console.log("[CRON] Fetching latest leaderboard data...");
 
 		try {
-			const { userCount, updateCount } = await updateAll();
+			const { userCount, updateCount } = await DB.updateAll();
 			console.log(
 				`[UpdateAll] Updated ${updateCount} results for ${userCount} users`,
 			);
@@ -67,7 +64,7 @@ new CronJob(
 			const month = new Date().getMonth() - 1;
 
 			if (leaderboard && leaderboard.isTextBased() && "send" in leaderboard) {
-				const leaderboardResult: LeaderboardMapped[] = db.getLeaderboard({
+				const leaderboardResult: LeaderboardMapped[] = DB.getLeaderboard({
 					month,
 				});
 
@@ -92,7 +89,7 @@ new CronJob(
 		console.log("[CRON] Updating everyone's score");
 
 		try {
-			const { userCount, updateCount } = await updateAll();
+			const { userCount, updateCount } = await DB.updateAll();
 			console.log(
 				`[UpdateAll] Updated ${updateCount} results for ${userCount} users`,
 			);
@@ -104,7 +101,7 @@ new CronJob(
 			const month = new Date().getMonth();
 
 			if (leaderboard && leaderboard.isTextBased() && "send" in leaderboard) {
-				const leaderboardResult: LeaderboardMapped[] = db.getLeaderboard({
+				const leaderboardResult: LeaderboardMapped[] = DB.getLeaderboard({
 					month,
 				});
 

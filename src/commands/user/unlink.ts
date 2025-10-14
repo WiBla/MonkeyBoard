@@ -9,7 +9,8 @@ import {
 	TextDisplayBuilder,
 } from "discord.js";
 import { Command } from "../../types/client.ts";
-import { deleteUser, isUserDev } from "../../utils/utils.ts";
+import DB from "../../utils/DB.ts";
+import { isUserDev } from "../../utils/utils.ts";
 
 export default {
 	data: new SlashCommandBuilder()
@@ -44,7 +45,7 @@ export async function confirm(interaction: ButtonInteraction) {
 	});
 
 	try {
-		deleteUser(userId);
+		DB.deleteUser(userId);
 		return await interaction.editReply({
 			content:
 				"Votre compte MonkeyBoard a été supprimé avec succès. Toutes vos données ont été effacées.",

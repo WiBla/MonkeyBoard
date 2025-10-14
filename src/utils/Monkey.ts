@@ -1,6 +1,6 @@
-import { db } from "../index.ts";
 import { LastResult, Profile, Tags } from "../types/models.d.ts";
 import { APIResponse } from "../types/monkeytype.d.ts";
+import DB from "./DB.ts";
 import { APIError, InactiveApeKeyError, InvalidApeKeyError } from "./errors.ts";
 import { getStartOfMonthTimestamp } from "./utils.ts";
 
@@ -50,14 +50,14 @@ class Monkey {
 			this.name = profile.name;
 
 			// Save user to DB
-			db.addUser(this);
+			DB.addUser(this);
 
 			// Get user's tags
 			const tags: Tags[] = await this.getTags();
 			if (tags.length === 0) {
 				console.log("[Monkey] No tags found for this user");
 			} else {
-				db.addTags(tags.map((tag) => ({ ...tag, uid: profile.uid })));
+				DB.addTags(tags.map((tag) => ({ ...tag, uid: profile.uid })));
 			}
 		} catch (err) {
 			console.error("[Monkey] completeProfileFromAPI() failed", err);
@@ -68,7 +68,7 @@ class Monkey {
 	}
 
 	completeProfileFromDB() {
-		const user: User | undefined = db.getUserByToken(this.token);
+		const user: User | undefined = DB.getUserByToken(this.token);
 
 		if (user === undefined) {
 			throw new Error("[Monkey] User not found");
@@ -94,12 +94,12 @@ class Monkey {
 			});
 
 			if (res.status === 200) {
-				db.setActive(this.token!, true);
+				DB.setActive(this.token!, true);
 				return true;
 			}
 
 			if (res.status === 471) {
-				db.setActive(this.token!, false);
+				DB.setActive(this.token!, false);
 				throw new InactiveApeKeyError();
 			}
 
@@ -127,7 +127,7 @@ class Monkey {
 
 			if (res.status === 471) {
 				try {
-					db.setActive(this.token, false);
+					DB.setActive(this.token, false);
 				} catch (err) {
 					console.error(
 						"[Monkey] Error while trying to save user as inactive",
@@ -194,14 +194,14 @@ class Monkey {
 
 		try {
 			// Attempts to get the latest result that is already in DB
-			let timestamp = db.getMostRecentTimestamp(this.uid);
+			let timestamp = DB.getMostRecentTimestamp(this.uid);
 			// Otherwise start from the 1st of the month
 			timestamp ??= getStartOfMonthTimestamp();
 
 			const results = await this.getResults(timestamp);
 			const trueResults = results.length - 1; // API always returns the result from the timestamp
 
-			db.addResults(results.map((result) => ({
+			DB.addResults(results.map((result) => ({
 				...result,
 				uid: this.uid!,
 			})));

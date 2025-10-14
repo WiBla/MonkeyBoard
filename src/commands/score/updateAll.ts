@@ -4,12 +4,14 @@ import {
 	SlashCommandBuilder,
 } from "discord.js";
 import { Command } from "../../types/client.ts";
-import { isUserDev, updateAll } from "../../utils/utils.ts";
+import DB from "../../utils/DB.ts";
+import { isUserDev } from "../../utils/utils.ts";
 
 export default {
 	data: new SlashCommandBuilder()
 		.setName("updateall")
 		.setDescription("(Dev only) Met à jours les scores de tout le monde"),
+
 	async execute(interaction: ChatInputCommandInteraction) {
 		const userId = interaction.user.id;
 
@@ -26,7 +28,7 @@ export default {
 			content: "Travail en cours...",
 		});
 
-		const { userCount, updateCount } = await updateAll();
+		const { userCount, updateCount } = await DB.updateAll();
 		console.log(
 			`[UpdateAll] Updated ${updateCount} results for ${userCount} users`,
 		);

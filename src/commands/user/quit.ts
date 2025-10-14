@@ -3,8 +3,8 @@ import {
 	MessageFlags,
 	SlashCommandBuilder,
 } from "discord.js";
-import { db } from "../../index.ts";
 import { Command } from "../../types/client.ts";
+import DB from "../../utils/DB.ts";
 
 export default {
 	data: new SlashCommandBuilder()
@@ -16,7 +16,7 @@ export default {
 		const userId = interaction.user.id;
 
 		// Fetch user data from the database
-		const user = db.getUserByDiscordId(userId);
+		const user = DB.getUserByDiscordId(userId);
 		if (!user) {
 			await interaction.reply({
 				flags: MessageFlags.Ephemeral,
@@ -34,7 +34,7 @@ export default {
 			return;
 		}
 
-		db.setDNT(user, true);
+		DB.setDNT(user, true);
 
 		await interaction.reply({
 			flags: MessageFlags.Ephemeral,
@@ -43,4 +43,4 @@ export default {
 		});
 		return;
 	},
-} as Command;
+} as unknown as Command;

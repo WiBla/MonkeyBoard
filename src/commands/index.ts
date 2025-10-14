@@ -1,3 +1,4 @@
+import { Command } from "../types/client.ts";
 import getMyScore from "./score/getMyScore.ts";
 import leaderboard from "./score/leaderboard.ts";
 import updateAll from "./score/updateAll.ts";
@@ -16,4 +17,4 @@ export default [
 	quit,
 	register,
 	unlink,
-];
+] as Command[];

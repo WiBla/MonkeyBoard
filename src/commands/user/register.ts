@@ -5,14 +5,14 @@ import {
 	SlashCommandBuilder,
 	TextDisplayBuilder,
 } from "discord.js";
-import { db } from "../../index.ts";
 import { Command } from "../../types/client.ts";
+import DB from "../../utils/DB.ts";
 import {
 	APIError,
 	InactiveApeKeyError,
 	InvalidApeKeyError,
 } from "../../utils/errors.ts";
-import { isUserDev, registerUser } from "../../utils/utils.ts";
+import { isUserDev } from "../../utils/utils.ts";
 
 export default {
 	data: new SlashCommandBuilder()
@@ -36,7 +36,7 @@ export default {
 		}
 
 		// If ApeKey provided → try to register
-		if (!isUserDev(userId) && db.userByDiscordIdExists(userId)) {
+		if (!isUserDev(userId) && DB.userByDiscordIdExists(userId)) {
 			return await interaction.reply({
 				content: "Vous avez déjà lié votre compte !",
 				flags: MessageFlags.Ephemeral,
@@ -86,7 +86,7 @@ _Considérez cette clé comme un **mot de passe**, elle me donne accès à votre
 		});
 
 		try {
-			const success = await registerUser(userId, ApeKey);
+			const success = await DB.registerUser(userId, ApeKey);
 			if (!success) {
 				await interaction.editReply("Vérifiez que votre clé soit valide");
 			} else {

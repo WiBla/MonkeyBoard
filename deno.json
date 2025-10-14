@@ -6,7 +6,7 @@
 	"permissions": {
 		"default": {
 			"env": true,
-			"read": [".env", "C:/Users/WiBla/AppData/Local/deno/plug", "./src"],
+			"read": [".env", "./src", "C:/Users/WiBla/AppData/Local/deno/plug", "./node_modules"],
 			"net": true,
 
 			"sys": true,
@@ -17,8 +17,8 @@
 	"tasks": {
 		"prod": "deno -P --env-file ./src/index.ts",
 		"dev": "deno --watch -P --env-file=.env.dev ./src/index.ts",
-		"register_prod": "deno -P --env-file ./src/deploy-commands.ts",
-		"register_dev": "deno -P --env-file=.env.dev ./src/deploy-commands.ts"
+		"publish": "deno -P --env-file ./src/deploy-commands.ts",
+		"publish_dev": "deno -P --env-file=.env.dev ./src/deploy-commands.ts"
 	},
 	"fmt": {
 		"useTabs": true,

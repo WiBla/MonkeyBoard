@@ -1,11 +1,10 @@
 import { Database } from "@db/sqlite";
-import { isProd } from "../index.ts";
 import { User } from "../types/models.d.ts";
 import Monkey from "./Monkey.ts";
-import { getMonthName, getStartOfMonthTimestamp } from "./utils.ts";
+import { getMonthName, getStartOfMonthTimestamp, isProd } from "./utils.ts";
 
 class DB {
-	public db: Database;
+	private db: Database;
 
 	// #region Base operations
 	constructor() {
@@ -139,6 +138,54 @@ class DB {
 	// #endregion Base operations
 
 	// #region Users
+	addUser(
+		user: Monkey,
+	) {
+		const { uid, name, discordId, token } = user;
+
+		if ([uid, name, discordId, token].indexOf(undefined) !== -1) {
+			throw new Error(
+				"[DB] Missing data to save user" +
+					JSON.stringify({ uid, name, discordId, token }, null, 4),
+			);
+		}
+
+		{
+			using insertStmt = this.db.prepare(`
+		INSERT INTO users (
+			uid, name, discordId, apeKey, isActive, dnt
+		)
+		VALUES (:uid, :name, :discordId, :token, 1, 0)
+		ON CONFLICT(uid) DO UPDATE SET
+		uid = excluded.uid,
+		name = excluded.name,
+		discordId = excluded.discordId
+	`);
+
+			insertStmt.run({ uid, name, discordId, token });
+			console.log("[DB] User saved");
+		}
+	}
+
+	async registerUser(
+		discordId: string,
+		apekey: string,
+	): Promise<boolean> {
+		try {
+			const user = new Monkey(apekey, discordId);
+			await user.completeProfileFromAPI();
+
+			const results = await user.getResults();
+			this.addResults(results);
+
+			console.log("[DB] User registered successfully");
+			return true;
+		} catch (err) {
+			console.error("[DB] Error while registering user", err);
+			throw err;
+		}
+	}
+
 	getAllUsers(ignoreDNT = false): User[] {
 		const stmt = `SELECT * from users where ${
 			ignoreDNT ? "1" : "dnt = 0"
@@ -171,33 +218,38 @@ class DB {
 		}
 	}
 
-	addUser(
-		user: Monkey,
-	) {
-		const { uid, name, discordId, token } = user;
+	async updateAll(): Promise<
+		{ userCount: number; updateCount: number }
+	> {
+		let userCount = 0;
+		let updateCount = 0;
 
-		if ([uid, name, discordId, token].indexOf(undefined) !== -1) {
-			throw new Error(
-				"[DB] Missing data to save user" +
-					JSON.stringify({ uid, name, discordId, token }, null, 4),
-			);
+		try {
+			const users = this.getAllUsers();
+
+			for (const dbUser of users) {
+				try {
+					userCount++;
+					const user = new Monkey(dbUser.apeKey);
+					const isKeyValid = await user.isKeyValid();
+
+					if (!isKeyValid) {
+						throw new Error("Invalid ApeKey for user" + dbUser.apeKey);
+					}
+
+					user.completeProfileFromDB();
+					const results = await user.updateResults();
+					updateCount += results;
+				} catch (err) {
+					console.error("[DB] Error while updating leaderboard", err);
+					throw err;
+				}
+			}
+		} catch (err) {
+			console.error("[DB] Cannot get users", err);
 		}
 
-		{
-			using insertStmt = this.db.prepare(`
-		INSERT INTO users (
-			uid, name, discordId, apeKey, isActive, dnt
-		)
-		VALUES (:uid, :name, :discordId, :token, 1, 0)
-		ON CONFLICT(uid) DO UPDATE SET
-		uid = excluded.uid,
-		name = excluded.name,
-		discordId = excluded.discordId
-	`);
-
-			insertStmt.run({ uid, name, discordId, token });
-			console.log("[DB] User saved");
-		}
+		return { userCount, updateCount };
 	}
 
 	setActive(apeKey: string, isActive: boolean) {
@@ -217,11 +269,26 @@ class DB {
 		user.DNT = dnt;
 	}
 
-	deleteUser(user: Monkey) {
-		this.deleteTags(user.uid!);
-		this.deleteResults(user.uid!);
-		this.db.exec("DELETE FROM users WHERE uid = ?", user.uid);
-		console.log("[DB] User deleted");
+	deleteUser(discordId: string): boolean {
+		let success = false;
+
+		try {
+			const user: User | undefined = this.getUserByDiscordId(discordId);
+			if (!user) throw new Error("User not found in database");
+
+			const monkey = new Monkey(user?.apeKey, discordId);
+			monkey.completeProfileFromDB();
+
+			this.deleteTags(user.uid!);
+			this.deleteResults(user.uid!);
+			this.db.exec("DELETE FROM users WHERE uid = ?", user.uid);
+			console.log("[DB] User deleted");
+			success = true;
+		} catch (err) {
+			console.error("[DB] Error while deleting user:", err);
+		}
+
+		return success;
 	}
 	// #endregion Users
 
@@ -488,4 +555,4 @@ WHERE
 	//#endregion Results
 }
 
-export default DB;
+export default new DB();

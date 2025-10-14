@@ -64,10 +64,7 @@ try {
 		} ${commands.length} command(s) in ${envLabel} mode.`,
 	);
 
-	const data = await rest.put(
-		route,
-		{ body: shouldDelete ? [] : commands },
-	);
+	const data = await rest.put(route, { body: commands });
 
 	console.log(
 		`[DEPLOY-CMDS] Successfully ${shouldDelete ? "deleted" : "reloaded"} ${
