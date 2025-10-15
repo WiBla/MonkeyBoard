@@ -18,7 +18,9 @@
 		"prod": "deno -P --env-file ./src/index.ts",
 		"dev": "deno --watch -P --env-file=.env.dev ./src/index.ts",
 		"publish": "deno -P --env-file ./src/deploy-commands.ts",
-		"publish_dev": "deno -P --env-file=.env.dev ./src/deploy-commands.ts"
+		"publish_dev": "deno -P --env-file=.env.dev ./src/deploy-commands.ts",
+		"ship": "deno compile -P --env-file ./src/index.ts && cp src.exe ../../",
+		"update-db": "cp ../../data.db . && cp data.db data-dev.db"
 	},
 	"fmt": {
 		"useTabs": true,

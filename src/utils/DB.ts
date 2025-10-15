@@ -456,6 +456,7 @@ ranked_results AS (
 )
 SELECT
   rr.id,
+	rr.uid,
   u.name,
   u.discordId,
   rr.wpm,
@@ -547,6 +548,28 @@ WHERE
 
 			return stmt.all<BestWPM>({ uid, start, end });
 		}
+	}
+
+	getLeaderboardWithBestWPM(
+		options?: { uid?: string; month?: number },
+	): LeaderboardWithBestWPM[] {
+		const leaderboard = this.getLeaderboard(options);
+
+		if (!leaderboard || leaderboard.length === 0) return [];
+
+		const uids = [...new Set(leaderboard.map((entry) => entry.uid))];
+		const PBs = uids.map((uid) => {
+			const lastPB = this.getBestWPM(uid, new Date().getMonth() - 1);
+			return { uid, lastPB };
+		});
+
+		return leaderboard.map((entry) => {
+			const lastPB = PBs.find((wpm) => wpm.uid === entry.uid)?.lastPB.find((
+				pb,
+			) => pb.language === entry.language)?.wpm;
+
+			return { ...entry, lastPB };
+		}) as LeaderboardWithBestWPM[];
 	}
 
 	deleteResults(uid: string) {

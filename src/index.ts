@@ -64,9 +64,7 @@ new CronJob(
 			const month = new Date().getMonth() - 1;
 
 			if (leaderboard && leaderboard.isTextBased() && "send" in leaderboard) {
-				const leaderboardResult: LeaderboardMapped[] = DB.getLeaderboard({
-					month,
-				});
+				const leaderboardResult = DB.getLeaderboardWithBestWPM({ month });
 
 				await (leaderboard as TextChannel).send(formatLeaderboard(
 					leaderboardResult,
@@ -94,18 +92,17 @@ new CronJob(
 				`[UpdateAll] Updated ${updateCount} results for ${userCount} users`,
 			);
 
-			const cooldownChannel = isProd
-				? "1101591223040491682"
-				: "1425221573186682891";
-			const leaderboard = await client.channels.fetch(cooldownChannel);
+			const channelId = isProd ? "1101591223040491682" : "1425221573186682891";
+			const cooldownChannel = await client.channels.fetch(channelId);
 			const month = new Date().getMonth();
 
-			if (leaderboard && leaderboard.isTextBased() && "send" in leaderboard) {
-				const leaderboardResult: LeaderboardMapped[] = DB.getLeaderboard({
-					month,
-				});
+			if (
+				cooldownChannel && cooldownChannel.isTextBased() &&
+				"send" in cooldownChannel
+			) {
+				const leaderboardResult = DB.getLeaderboardWithBestWPM({ month });
 
-				await (leaderboard as TextChannel).send({
+				await (cooldownChannel as TextChannel).send({
 					content: formatLeaderboard(
 						leaderboardResult,
 						"daily",

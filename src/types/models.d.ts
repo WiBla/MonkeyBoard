@@ -43,6 +43,7 @@ type User = {
 
 type Leaderboard = {
 	id: string;
+	uid: string;
 	name: string;
 	discordId: string;
 	wpm: number;

@@ -12,7 +12,7 @@ export default {
 		.setName("leaderboard")
 		.setDescription("Génère un aperçu du leaderboard actuel"),
 	async execute(interaction: ChatInputCommandInteraction) {
-		const leaderboard: LeaderboardMapped[] = DB.getLeaderboard();
+		const leaderboard = DB.getLeaderboardWithBestWPM();
 
 		if (!leaderboard || leaderboard.length === 0) {
 			await interaction.reply({
