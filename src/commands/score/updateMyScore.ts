@@ -38,11 +38,12 @@ export default {
 		const monkey = new Monkey(user.apeKey || "");
 		monkey.completeProfileFromDB();
 		const newResults = await monkey.updateResults();
+		const tags = await monkey.updateTags();
 
 		await interaction.reply({
 			flags: MessageFlags.Ephemeral,
 			content:
-				`Vos scores ont été mis à jour ! ${newResults} nouveaux résultat(s) ont été ajouté(s).`,
+				`Vos scores ont été mis à jour ! ${newResults} nouveaux résultat(s) ont été ajouté(s). Vous avez ${tags.length} tag(s)`,
 		});
 	},
 } as Command;

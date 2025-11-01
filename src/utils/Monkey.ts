@@ -53,12 +53,7 @@ class Monkey {
 			DB.addUser(this);
 
 			// Get user's tags
-			const tags: Tags[] = await this.getTags();
-			if (tags.length === 0) {
-				console.log("[Monkey] No tags found for this user");
-			} else {
-				DB.addTags(tags.map((tag) => ({ ...tag, uid: profile.uid })));
-			}
+			this.updateTags();
 		} catch (err) {
 			console.error("[Monkey] completeProfileFromAPI() failed", err);
 			throw err;
@@ -180,6 +175,28 @@ class Monkey {
 		} catch (err) {
 			console.error("[Monkey] Failed to fetch tags:", err);
 			return [] as Tags[];
+		}
+	}
+
+	async updateTags(): Promise<Tags> {
+		if (!this.uid) {
+			throw new Error(
+				"[Monkey] User must be completed from the DB or the API using 'monkey.completeProfileFrom..'",
+			);
+		}
+
+		try {
+			const tags: Tags[] = await this.getTags();
+			if (tags.length === 0) {
+				console.log("[Monkey] No tags found for this user");
+			} else {
+				DB.addTags(tags.map((tag) => ({ ...tag, uid: this.uid })));
+				console.log(`[Monkey] Saved ${tags.length} tag(s) for this user`);
+				return tags;
+			}
+		} catch (err) {
+			console.error("[Monkey] Error while updating user results", err);
+			return 0;
 		}
 	}
 	// #endregion Tags

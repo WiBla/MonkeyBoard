@@ -250,6 +250,7 @@ class DB {
 
 					user.completeProfileFromDB();
 					const results = await user.updateResults(true);
+					user.updateTags();
 					updateCount += results;
 				} catch (err) {
 					console.error("[DB] Error while updating leaderboard", err);
