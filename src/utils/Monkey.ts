@@ -185,7 +185,7 @@ class Monkey {
 	// #endregion Tags
 
 	// #region Results
-	async updateResults(): Promise<number> {
+	async updateResults(forceUpdate = false): Promise<number> {
 		if (!this.uid) {
 			throw new Error(
 				"[Monkey] User must be completed from the DB or the API using 'monkey.completeProfileFrom..'",
@@ -193,22 +193,32 @@ class Monkey {
 		}
 
 		try {
-			// Attempts to get the latest result that is already in DB
-			let timestamp = DB.getMostRecentTimestamp(this.uid);
-			// Otherwise start from the 1st of the month
-			timestamp ??= getStartOfMonthTimestamp();
+			let timestamp;
+
+			if (!forceUpdate) {
+				// Attempts to get the latest result that is already in DB
+				timestamp = DB.getMostRecentTimestamp(this.uid);
+				// Otherwise start from the 1st of the month
+				timestamp ??= getStartOfMonthTimestamp();
+			} else {
+				timestamp = null;
+			}
 
 			const results = await this.getResults(timestamp);
-			const trueResults = results.length - 1; // API always returns the result from the timestamp
+			const trueResults = forceUpdate ? results.length : results.length - 1; // API always returns the result from the timestamp
 
-			DB.addResults(results.map((result) => ({
-				...result,
-				uid: this.uid!,
-			})));
+			if (trueResults > 0) {
+				DB.addResults(results.map((result) => ({
+					...result,
+					uid: this.uid!,
+				})));
 
-			console.log(
-				`[Monkey] Done saving ${trueResults} new result(s) from this user's monthly activity`,
-			);
+				console.log(
+					`[Monkey] Done saving ${trueResults} new result(s) for ${this.name}.`,
+				);
+			} else {
+				console.log(`[Monkey] No new results for ${this.name}.`);
+			}
 
 			return trueResults;
 		} catch (err) {
@@ -225,7 +235,7 @@ class Monkey {
 		if (timestamp) params.append("onOrAfterTimestamp", timestamp + "");
 		if (offset) params.append("offset", offset + "");
 
-		console.debug("[Monkey] Fetching results", { timestamp, offset });
+		console.debug("[Monkey] Fetching results", params.toString());
 
 		try {
 			const data = await this.get<APIResponse<Result[]>>(

@@ -218,6 +218,17 @@ class DB {
 		}
 	}
 
+	getNameFromUID(uid: string): string {
+		{
+			using stmt = this.db.prepare(
+				"SELECT name FROM users WHERE uid = ?",
+			);
+			const fetch = stmt.get<{ name: string }>(uid);
+
+			return fetch?.name || "";
+		}
+	}
+
 	async updateAll(): Promise<
 		{ userCount: number; updateCount: number }
 	> {
@@ -225,7 +236,7 @@ class DB {
 		let updateCount = 0;
 
 		try {
-			const users = this.getAllUsers();
+			const users = this.getAllUsers(true);
 
 			for (const dbUser of users) {
 				try {
@@ -238,7 +249,7 @@ class DB {
 					}
 
 					user.completeProfileFromDB();
-					const results = await user.updateResults();
+					const results = await user.updateResults(true);
 					updateCount += results;
 				} catch (err) {
 					console.error("[DB] Error while updating leaderboard", err);
@@ -321,6 +332,8 @@ class DB {
 
 	// #region Results
 	addResults(results: Result[]) {
+		if (results.length === 0) return;
+
 		{
 			using insertStmt = this.db.prepare(`
 				INSERT INTO results (
@@ -510,8 +523,11 @@ ORDER BY rr.language DESC, rr.wpm DESC;`);
 		}
 	}
 
-	getBestWPM(uid: string, month?: number): BestWPM[] {
+	getBestWPM(options?: { uid?: string; month?: number }): BestWPM[] {
 		{
+			const { uid } = options ?? {};
+			const month = options?.month || new Date().getMonth() - 1;
+
 			using stmt = this.db.prepare(
 				`SELECT
 	r.language,
@@ -532,7 +548,6 @@ WHERE
 	group by language`,
 			);
 
-			month = month || new Date().getMonth();
 			const start = Math.floor(
 				getStartOfMonthTimestamp(month) / 1000,
 			);
@@ -541,12 +556,15 @@ WHERE
 			);
 
 			console.debug(
-				`[DB] Fetching best WPM for ${uid ?? "all users"} for the month ${
-					getMonthName(month)
-				}`,
+				`[DB] Fetching best WPM for ${
+					uid ? this.getNameFromUID(uid) : "all users"
+				} for the month ${getMonthName(month)}`,
 			);
 
-			return stmt.all<BestWPM>({ uid, start, end });
+			// Necessary because SQLite will check if each parameter is in the query and error if not
+			const bind = uid ? { start, end, uid } : { start, end };
+
+			return stmt.all<BestWPM>(bind);
 		}
 	}
 
@@ -554,12 +572,16 @@ WHERE
 		options?: { uid?: string; month?: number },
 	): LeaderboardWithBestWPM[] {
 		const leaderboard = this.getLeaderboard(options);
+		const compareMonth = options?.month || undefined;
 
 		if (!leaderboard || leaderboard.length === 0) return [];
 
 		const uids = [...new Set(leaderboard.map((entry) => entry.uid))];
 		const PBs = uids.map((uid) => {
-			const lastPB = this.getBestWPM(uid, new Date().getMonth() - 1);
+			const lastPB = this.getBestWPM({
+				uid,
+				month: compareMonth ? compareMonth - 1 : undefined,
+			});
 			return { uid, lastPB };
 		});
 
