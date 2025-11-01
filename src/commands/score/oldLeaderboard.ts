@@ -9,10 +9,12 @@ import { formatLeaderboard } from "../../utils/utils.ts";
 
 export default {
 	data: new SlashCommandBuilder()
-		.setName("podium")
-		.setDescription("Génère un aperçu du podium"),
+		.setName("dernierpodium")
+		.setDescription("(Dev only) Voir le podium du mois précédent"),
 	async execute(interaction: ChatInputCommandInteraction) {
-		const leaderboard = DB.getLeaderboardWithBestWPM();
+		const month = new Date().getMonth() - 1;
+
+		const leaderboard = DB.getLeaderboardWithBestWPM({ month });
 
 		if (!leaderboard || leaderboard.length === 0) {
 			await interaction.reply({
@@ -26,7 +28,8 @@ export default {
 			flags: MessageFlags.Ephemeral,
 			content: formatLeaderboard(
 				leaderboard,
-				"temporary",
+				"monthly",
+				month,
 			),
 			allowedMentions: {
 				parse: [],

@@ -9,7 +9,7 @@ import { formatLeaderboard } from "../../utils/utils.ts";
 
 export default {
 	data: new SlashCommandBuilder()
-		.setName("getmyscore")
+		.setName("voirmonscore")
 		.setDescription("Récupère votre score du mois"),
 	async execute(interaction: ChatInputCommandInteraction) {
 		const userId = interaction.user.id;

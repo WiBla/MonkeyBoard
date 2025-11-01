@@ -10,7 +10,7 @@ import Monkey from "../../utils/Monkey.ts";
 export default {
 	cooldown: 1800, // 30 mins
 	data: new SlashCommandBuilder()
-		.setName("updatemyscore")
+		.setName("actualiser")
 		.setDescription("Met à jours vos scores"),
 	async execute(interaction: ChatInputCommandInteraction) {
 		const userId = interaction.user.id;

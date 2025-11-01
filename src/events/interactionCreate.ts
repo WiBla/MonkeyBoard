@@ -15,8 +15,13 @@ export default {
 		);
 
 		if (!command) {
+			interaction.reply({
+				content: "Commande inconnue",
+				flags: MessageFlags.Ephemeral,
+			});
 			console.error(
 				`No command matching ${interaction.commandName} was found.`,
+				(interaction.client as TSClient).commands,
 			);
 			return;
 		}
