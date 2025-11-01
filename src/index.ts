@@ -80,9 +80,9 @@ new CronJob(
 	true,
 );
 
-// Post a leaderboard update every day at 9am
+// Post a leaderboard update every saturday at 9am
 new CronJob(
-	"0 9 * * *",
+	"0 9 * * 6",
 	async () => {
 		console.log("[CRON] Updating everyone's score");
 
@@ -115,6 +115,25 @@ new CronJob(
 					},
 				});
 			}
+		} catch (error) {
+			console.error("[BOT] Error creating daily leaderboard", error);
+		}
+	},
+	null,
+	true,
+);
+
+// Update DB with latest results
+new CronJob(
+	"@daily",
+	async () => {
+		console.log("[CRON] Updating everyone's score");
+
+		try {
+			const { userCount, updateCount } = await DB.updateAll();
+			console.log(
+				`[UpdateAll] Updated ${updateCount} results for ${userCount} users`,
+			);
 		} catch (error) {
 			console.error("[BOT] Error creating daily leaderboard", error);
 		}
