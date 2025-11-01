@@ -21,7 +21,7 @@ export function getMonthName(month: number): string {
 function formatLastPB(wpm: number, lastPB: number | null): string {
 	if (lastPB === null) return "";
 
-	const diff = wpm - lastPB;
+	const diff = Math.round(wpm - lastPB);
 	let diffStr = "";
 
 	switch (Math.sign(diff)) {
@@ -36,7 +36,7 @@ function formatLastPB(wpm: number, lastPB: number | null): string {
 			break;
 	}
 
-	return ` ${diffStr} ${Math.abs(Math.round(diff))}`;
+	return ` ${diffStr} ${Math.abs(diff)}`;
 }
 
 export function formatLeaderboard(
