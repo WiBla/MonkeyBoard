@@ -17,7 +17,9 @@ class Monkey {
 
 	// #region Base operations
 	constructor(apekey: string, discordId?: string) {
-		this.checkToken(apekey);
+		if (apekey !== "") {
+			this.checkToken(apekey);
+		}
 
 		this.API_URL = "https://api.monkeytype.com";
 		this.headers = { Authorization: `ApeKey ${apekey}` };
@@ -43,10 +45,11 @@ class Monkey {
 			}
 
 			// Get user's username
+			// TODO This can be avoided using the user's discord globalname
 			const profile = await this.getProfileByID(lastResult.uid);
 			if (!profile?.name) throw new Error("Cannot get profile", profile);
 
-			this.uid = profile.uid;
+			this.uid = lastResult.uid;
 			this.name = profile.name;
 
 			// Save user to DB

@@ -22,6 +22,7 @@ export default {
 			console.error(
 				`No command matching ${interaction.commandName} was found.`,
 				(interaction.client as TSClient).commands,
+				"\nDid you forget to export the command from the folder?",
 			);
 			return;
 		}

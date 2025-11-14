@@ -1,4 +1,5 @@
 import { Command } from "../types/client.ts";
+import addScore from "./score/addScore.ts";
 import getMyScore from "./score/getMyScore.ts";
 import leaderboard from "./score/leaderboard.ts";
 import oldLeaderboard from "./score/oldLeaderboard.ts";
@@ -10,6 +11,7 @@ import register from "./user/register.ts";
 import unlink from "./user/unlink.ts";
 
 export default [
+	addScore,
 	getMyScore,
 	leaderboard,
 	oldLeaderboard,

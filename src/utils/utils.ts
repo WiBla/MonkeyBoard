@@ -39,6 +39,13 @@ function formatLastPB(wpm: number, lastPB: number | null): string {
 	return ` ${diffStr} ${Math.abs(diff)}`;
 }
 
+const languages: { title: string; filter: string | null }[] = [
+	{ title: "FR Stock", filter: "french" },
+	{ title: "FR 600k", filter: "french_600k" },
+	{ title: "EN Stock", filter: null },
+	{ title: "EN 450k", filter: "english_450k" },
+];
+
 export function formatLeaderboard(
 	leaderboard: LeaderboardMapped[] | LeaderboardWithBestWPM[],
 	type: "personal" | "temporary" | "monthly",
@@ -73,30 +80,26 @@ export function formatLeaderboard(
 		entry: LeaderboardMapped | LeaderboardWithBestWPM,
 		index: number,
 	) {
-		let { discordId, wpm, /*acc,*/ isPb, tag_names } = entry;
+		let { id, discordId, wpm, /*acc,*/ isPb, tag_names } = entry;
 		const lastPB = (entry as LeaderboardWithBestWPM).lastPB ?? null;
 
 		++index;
 		const prefix = type === "personal" ? "" : `${index}. <@${discordId}> : `;
 		wpm = Math.floor(wpm);
 		// acc = Math.floor(acc);
-		const pbStr = isPb ? " **PB🔥**" : "";
+		const pbStr = isPb ? " **PB 🔥**" : "";
 		tag_names = tag_names ? ` (${tag_names})` : "";
 		const lastPBStr = formatLastPB(wpm, lastPB);
 
+		const isManual = id.includes("manual") ? " (⚠️ score manuel)" : "";
+
+		// TODO this could be replaced by a "simplified" bool option in the /podium cmd
 		if (type === "temporary") {
-			content += `${prefix}${wpm} wpm ${pbStr}\n`;
+			content += `${prefix}${wpm} wpm ${pbStr}${isManual}\n`;
 		} else {
 			content += `${prefix}${wpm} wpm ${pbStr}${lastPBStr}${tag_names}\n`;
 		}
 	}
-
-	const languages: { title: string; filter: string | null }[] = [
-		{ title: "FR Stock", filter: "french" },
-		{ title: "FR 600k", filter: "french_600k" },
-		{ title: "EN Stock", filter: null },
-		{ title: "EN 450k", filter: "english_450k" },
-	];
 
 	for (const language of languages) {
 		content += `${(type === "temporary" ? "" : "## ")}${language.title} :\n`;

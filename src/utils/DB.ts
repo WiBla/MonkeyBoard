@@ -425,6 +425,47 @@ class DB {
 		}
 	}
 
+	addManualResult(
+		user: User,
+		wpm: number,
+		acc: number,
+		language: string,
+		isPB = false,
+	) {
+		{
+			using insertStmt = this.db.prepare(`
+				INSERT INTO results (
+					id, uid, wpm, acc, language, mode, mode2, lazymode, timestamp, tags, isPb
+				)
+				VALUES (
+					:id, :uid, :wpm, :acc, :language, :mode, :mode2, :lazymode, :timestamp, :tags, :isPb
+				)
+			`);
+
+			try {
+				insertStmt.run({
+					id: "manual-" + Math.random().toString().replace("0.", ""), // replace with proper UUID
+					uid: user.uid,
+					wpm: wpm,
+					acc: acc,
+					mode: "words",
+					language: language === "null" ? null : language,
+					mode2: language === "french_600k" || language === "english_450k"
+						? "25"
+						: "50",
+					lazymode: 0,
+					timestamp: Math.floor(new Date().getTime() / 1000),
+					tags: JSON.stringify([]),
+					isPb: isPB,
+				});
+			} catch (error) {
+				console.error("[DB] Error while inserting manual result:", error);
+			}
+
+			console.log(`[DB] Manual result added`);
+		}
+	}
+
 	getLeaderboard(
 		options?: { uid?: string; month?: number },
 	): LeaderboardMapped[] {
