@@ -229,14 +229,14 @@ class DB {
 		}
 	}
 
-	async updateAll(): Promise<
+	async updateAll(ignoreDNT = false): Promise<
 		{ userCount: number; updateCount: number }
 	> {
 		let userCount = 0;
 		let updateCount = 0;
 
 		try {
-			const users = this.getAllUsers(true);
+			const users = this.getAllUsers(ignoreDNT);
 
 			for (const dbUser of users) {
 				try {
@@ -249,7 +249,7 @@ class DB {
 					}
 
 					user.completeProfileFromDB();
-					const results = await user.updateResults(true);
+					const results = await user.updateResults();
 					user.updateTags();
 					updateCount += results;
 				} catch (err) {

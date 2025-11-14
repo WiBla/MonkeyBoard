@@ -10,8 +10,12 @@ import { isUserDev } from "../../utils/utils.ts";
 export default {
 	data: new SlashCommandBuilder()
 		.setName("updateall")
-		.setDescription("(Dev only) Met à jours les scores de tout le monde"),
-
+		.setDescription("(Dev only) Met à jours les scores de tout le monde")
+		.addBooleanOption((bool) =>
+			bool.setName("ignore-dnt").setDescription(
+				"Force l'actualisation de tous les utilisateurs, même ceux ayant quitté la compétition",
+			)
+		),
 	async execute(interaction: ChatInputCommandInteraction) {
 		const userId = interaction.user.id;
 
@@ -28,7 +32,9 @@ export default {
 			content: "Travail en cours...",
 		});
 
-		const { userCount, updateCount } = await DB.updateAll();
+		const ignoreDNT = interaction.options.getBoolean("ignore-dnt") ?? false;
+
+		const { userCount, updateCount } = await DB.updateAll(ignoreDNT);
 		console.log(
 			`[UpdateAll] Updated ${updateCount} results for ${userCount} users`,
 		);
