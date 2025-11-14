@@ -105,7 +105,7 @@ new CronJob(
 				await (cooldownChannel as TextChannel).send({
 					content: formatLeaderboard(
 						leaderboardResult,
-						"daily",
+						"temporary",
 						month,
 					) +
 						"\nVous voulez participer ? N'hésitez pas à lier votre compte avec la commande \`/register\` !",

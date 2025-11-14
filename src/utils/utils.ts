@@ -41,7 +41,7 @@ function formatLastPB(wpm: number, lastPB: number | null): string {
 
 export function formatLeaderboard(
 	leaderboard: LeaderboardMapped[] | LeaderboardWithBestWPM[],
-	type: "personal" | "temporary" | "monthly" | "daily",
+	type: "personal" | "temporary" | "monthly",
 	month: number = new Date().getMonth(),
 ): string {
 	if (!leaderboard || leaderboard.length === 0) {
@@ -60,9 +60,6 @@ export function formatLeaderboard(
 			content = `## Classement temporaire ${getMonthName(month)} ${
 				new Date().getFullYear()
 			}\n`;
-			break;
-		case "daily":
-			content = `Classement journalier ${getMonthName(month)}\n\n`;
 			break;
 		case "monthly":
 		default:
@@ -87,7 +84,7 @@ export function formatLeaderboard(
 		tag_names = tag_names ? ` (${tag_names})` : "";
 		const lastPBStr = formatLastPB(wpm, lastPB);
 
-		if (type === "daily") {
+		if (type === "temporary") {
 			content += `${prefix}${wpm} wpm ${pbStr}\n`;
 		} else {
 			content += `${prefix}${wpm} wpm ${pbStr}${lastPBStr}${tag_names}\n`;
@@ -102,7 +99,7 @@ export function formatLeaderboard(
 	];
 
 	for (const language of languages) {
-		content += `${(type === "daily" ? "" : "## ")}${language.title} :\n`;
+		content += `${(type === "temporary" ? "" : "## ")}${language.title} :\n`;
 		leaderboard.filter((entry) => entry.language === language.filter).forEach(
 			formatPosition,
 		);
@@ -112,10 +109,9 @@ export function formatLeaderboard(
 		case "personal":
 		case "temporary":
 			content +=
-				"\nVous pouvez utiliser la commande \`updatemyscore\` jusqu'à 30 fois par jours pour être sûr d'avoir vos derniers résultats.";
+				"\nVous pouvez utiliser la commande \`actualiser\` jusqu'à 30 fois par jours pour être sûr d'avoir vos derniers résultats.";
 			break;
 		case "monthly":
-		case "daily":
 		default:
 			break;
 	}
