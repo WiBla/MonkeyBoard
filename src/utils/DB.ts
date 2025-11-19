@@ -189,7 +189,7 @@ class DB {
 	getAllUsers(ignoreDNT = false): User[] {
 		const stmt = `SELECT * from users where ${
 			ignoreDNT ? "1" : "dnt = 0"
-		} limit 100`;
+		} and apeKey != '' limit 100`;
 		console.debug("[DB] Getting all users, ignoreDNT is", ignoreDNT, stmt);
 		return this.db.prepare(stmt).all<User>();
 	}
