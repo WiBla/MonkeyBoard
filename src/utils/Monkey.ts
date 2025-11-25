@@ -2,7 +2,10 @@ import { LastResult, Profile, Tags } from "../types/models.d.ts";
 import { APIResponse } from "../types/monkeytype.d.ts";
 import DB from "./DB.ts";
 import { APIError, InactiveApeKeyError, InvalidApeKeyError } from "./errors.ts";
-import { getStartOfMonthTimestamp } from "./utils.ts";
+import { Logger } from "./Logger.ts";
+import { getStartOfMonthTimestamp, isProd } from "./utils.ts";
+
+const log = new Logger({ name: "Monkey", level: isProd ? "INFO" : "DEBUG" });
 
 class Monkey {
 	// #region Properties
@@ -58,7 +61,7 @@ class Monkey {
 			// Get user's tags
 			this.updateTags();
 		} catch (err) {
-			console.error("[Monkey] completeProfileFromAPI() failed", err);
+			log.error("completeProfileFromAPI() failed", { err });
 			throw err;
 		}
 
@@ -69,7 +72,7 @@ class Monkey {
 		const user: User | undefined = DB.getUserByToken(this.token);
 
 		if (user === undefined) {
-			throw new Error("[Monkey] User not found");
+			throw new Error("User not found");
 		}
 
 		this.uid = user.uid;
@@ -103,7 +106,7 @@ class Monkey {
 
 			throw new APIError(`Unexpected HTTP status: ${res.status}`);
 		} catch (err) {
-			console.error("[Monkey] isKeyValid() failed", err);
+			log.error("isKeyValid() failed", { err });
 			throw err;
 		}
 	}
@@ -127,9 +130,9 @@ class Monkey {
 				try {
 					DB.setActive(this.token, false);
 				} catch (err) {
-					console.error(
-						"[Monkey] Error while trying to save user as inactive",
-						err,
+					log.error(
+						`Error while trying to save ${this.name} as inactive`,
+						{ err },
 					);
 				}
 				throw new InactiveApeKeyError();
@@ -149,10 +152,10 @@ class Monkey {
 			const data = await this.get<Profile>(
 				`/users/${uid}/profile?isUid=true`,
 			);
-			console.debug("[Monkey] Profile by ID", data);
+			log.debug("Profile by ID", data);
 			return (data?.data ?? {}) as Profile;
 		} catch (err) {
-			console.error("[Monkey] Failed to fetch profile:", err);
+			log.error("Failed to fetch profile:", { err });
 			return {} as Profile;
 		}
 	}
@@ -160,10 +163,10 @@ class Monkey {
 	async getProfileByUsername(username: string): Promise<Profile> {
 		try {
 			const data = await this.get<Profile>(`/users/${username}/profile`);
-			console.debug("[Monkey] Profile by username", data);
+			log.debug("Profile by username", data);
 			return (data?.data ?? {}) as Profile;
 		} catch (err) {
-			console.error("[Monkey] Failed to fetch profile:", err);
+			log.error("Failed to fetch profile:", { err });
 			return {} as Profile;
 		}
 	}
@@ -173,10 +176,10 @@ class Monkey {
 	async getTags(): Promise<Tags[]> {
 		try {
 			const data = await this.get<APIResponse<Tags[]>>("/users/tags");
-			console.debug("[Monkey] Tags", data);
+			// log.debug("Tags", data);
 			return (data?.data ?? []) as Tags[];
 		} catch (err) {
-			console.error("[Monkey] Failed to fetch tags:", err);
+			log.error("Failed to fetch tags:", { err });
 			return [] as Tags[];
 		}
 	}
@@ -184,21 +187,21 @@ class Monkey {
 	async updateTags(): Promise<Tags> {
 		if (!this.uid) {
 			throw new Error(
-				"[Monkey] User must be completed from the DB or the API using 'monkey.completeProfileFrom..'",
+				"User must be completed from the DB or the API using 'monkey.completeProfileFrom..'",
 			);
 		}
 
 		try {
 			const tags: Tags[] = await this.getTags();
 			if (tags.length === 0) {
-				console.log("[Monkey] No tags found for this user");
+				log.info(`No tags found for ${this.name}`);
 			} else {
 				DB.addTags(tags.map((tag) => ({ ...tag, uid: this.uid })));
-				console.log(`[Monkey] Saved ${tags.length} tag(s) for this user`);
+				log.success(`Saved ${tags.length} tag(s) for ${this.name}`);
 				return tags;
 			}
 		} catch (err) {
-			console.error("[Monkey] Error while updating user results", err);
+			log.error(`Error while updating ${this.name} results`, { err });
 			return 0;
 		}
 	}
@@ -208,7 +211,7 @@ class Monkey {
 	async updateResults(forceUpdate = false): Promise<number> {
 		if (!this.uid) {
 			throw new Error(
-				"[Monkey] User must be completed from the DB or the API using 'monkey.completeProfileFrom..'",
+				"User must be completed from the DB or the API using 'monkey.completeProfileFrom..'",
 			);
 		}
 
@@ -233,16 +236,16 @@ class Monkey {
 					uid: this.uid!,
 				})));
 
-				console.log(
-					`[Monkey] Done saving ${trueResults} new result(s) for ${this.name}.`,
+				log.success(
+					`Done saving ${trueResults} new result(s) for ${this.name}.`,
 				);
 			} else {
-				console.log(`[Monkey] No new results for ${this.name}.`);
+				log.info(`No new results for ${this.name}.`);
 			}
 
 			return trueResults;
 		} catch (err) {
-			console.error("[Monkey] Error while updating user results", err);
+			log.error(`Error while updating ${this.name} results`, { err });
 			return 0;
 		}
 	}
@@ -255,7 +258,7 @@ class Monkey {
 		if (timestamp) params.append("onOrAfterTimestamp", timestamp + "");
 		if (offset) params.append("offset", offset + "");
 
-		console.debug("[Monkey] Fetching results", params.toString());
+		log.debug("Fetching results", params.toString());
 
 		try {
 			const data = await this.get<APIResponse<Result[]>>(
@@ -263,7 +266,7 @@ class Monkey {
 			);
 			return (data?.data ?? []) as Result[];
 		} catch (err) {
-			console.error("[Monkey] Failed to fetch results:", err);
+			log.error("Failed to fetch results:", { err });
 			throw err;
 		}
 	}
@@ -271,10 +274,10 @@ class Monkey {
 	async getLastResult(): Promise<LastResult> {
 		try {
 			const data = await this.get<APIResponse<LastResult>>("/results/last");
-			console.debug("[Monkey] Last result", data);
+			log.debug("Last result", data);
 			return (data?.data ?? {}) as LastResult;
 		} catch (err) {
-			console.error("[Monkey] Failed to fetch last result:", err);
+			log.error("Failed to fetch last result:", { err });
 			throw err;
 		}
 	}

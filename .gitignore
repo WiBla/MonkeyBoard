@@ -7,4 +7,5 @@
 # misc
 /node_modules
 /imgs
+/logs
 src.exe

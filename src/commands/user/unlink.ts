@@ -8,6 +8,7 @@ import {
 	SlashCommandBuilder,
 	TextDisplayBuilder,
 } from "discord.js";
+import { log } from "../../index.ts";
 import { Command } from "../../types/client.ts";
 import DB from "../../utils/DB.ts";
 import { isUserDev } from "../../utils/utils.ts";
@@ -36,7 +37,7 @@ export async function confirm(interaction: ButtonInteraction) {
 	let userId = interaction.user.id;
 
 	if (isUserDev(userId)) {
-		console.log("[Unlink] Dev user detected, using test ID");
+		log.info("[Unlink] Dev user detected, using test ID");
 		userId = "287702750366662658";
 	}
 
@@ -50,10 +51,10 @@ export async function confirm(interaction: ButtonInteraction) {
 			content:
 				"Votre compte MonkeyBoard a été supprimé avec succès. Toutes vos données ont été effacées.",
 		});
-	} catch (error) {
-		console.error(
+	} catch (err) {
+		log.error(
 			`[Unlink] An error occured while deleting user ${userId}`,
-			error,
+			{ err },
 		);
 		return await interaction.editReply({
 			content:

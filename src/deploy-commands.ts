@@ -71,6 +71,6 @@ try {
 			(data as Array<unknown>).length
 		} command(s).`,
 	);
-} catch (error) {
-	console.error("[DEPLOY-CMDS] Failed:", error);
+} catch (err) {
+	console.error("[DEPLOY-CMDS] Failed:", err);
 }

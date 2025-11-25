@@ -1,7 +1,10 @@
 import { Database } from "@db/sqlite";
 import { User } from "../types/models.d.ts";
+import { Logger } from "./Logger.ts";
 import Monkey from "./Monkey.ts";
 import { getMonthName, getStartOfMonthTimestamp, isProd } from "./utils.ts";
+
+const log = new Logger({ name: "DB", level: isProd ? "INFO" : "DEBUG" });
 
 class DB {
 	private db: Database;
@@ -9,12 +12,12 @@ class DB {
 	// #region Base operations
 	constructor() {
 		this.db = new Database(isProd ? "./data.db" : "./data-dev.db");
-		console.debug(`[DB] Running in ${isProd ? "PROD" : "DEV"} mode.`);
+		log.debug(`Running in ${isProd ? "PROD" : "DEV"} mode.`);
 
 		this.createTables();
 		this.verifyTables();
 
-		console.log("[DB] Ready");
+		log.success("Ready");
 	}
 
 	createTables() {
@@ -125,9 +128,9 @@ class DB {
 
 			for (const colname in columns) {
 				const exists = realCols.some((c) => c.name === colname);
-				// console.debug({ realCols, colname, exists });
+				// log.debug({ realCols, colname, exists });
 				if (!exists) {
-					console.log(`[DB] Adding missing column '${colname}' to '${table}'`);
+					log.info(`Adding missing column '${colname}' to '${table}'`);
 					this.db.exec(
 						`ALTER TABLE ${table} ADD COLUMN ${colname} ${columns[colname]}`,
 					);
@@ -145,7 +148,7 @@ class DB {
 
 		if ([uid, name, discordId, token].indexOf(undefined) !== -1) {
 			throw new Error(
-				"[DB] Missing data to save user" +
+				"Missing data to save user" +
 					JSON.stringify({ uid, name, discordId, token }, null, 4),
 			);
 		}
@@ -163,7 +166,7 @@ class DB {
 	`);
 
 			insertStmt.run({ uid, name, discordId, token });
-			console.log("[DB] User saved");
+			log.success("User saved");
 		}
 	}
 
@@ -178,10 +181,10 @@ class DB {
 			const results = await user.getResults();
 			this.addResults(results);
 
-			console.log("[DB] User registered successfully");
+			log.success("User registered successfully");
 			return true;
 		} catch (err) {
-			console.error("[DB] Error while registering user", err);
+			log.error("Error while registering user", { err });
 			throw err;
 		}
 	}
@@ -190,7 +193,7 @@ class DB {
 		const stmt = `SELECT * from users where ${
 			ignoreDNT ? "1" : "dnt = 0"
 		} and apeKey != '' limit 100`;
-		console.debug("[DB] Getting all users, ignoreDNT is", ignoreDNT, stmt);
+		log.debug(`Getting all users, ignoreDNT is ${ignoreDNT}`, stmt);
 		return this.db.prepare(stmt).all<User>();
 	}
 
@@ -253,12 +256,12 @@ class DB {
 					user.updateTags();
 					updateCount += results;
 				} catch (err) {
-					console.error("[DB] Error while updating leaderboard", err);
+					log.error("Error while updating leaderboard", { err });
 					throw err;
 				}
 			}
 		} catch (err) {
-			console.error("[DB] Cannot get users", err);
+			log.error("Cannot get users", { err });
 		}
 
 		return { userCount, updateCount };
@@ -294,10 +297,10 @@ class DB {
 			this.deleteTags(user.uid!);
 			this.deleteResults(user.uid!);
 			this.db.exec("DELETE FROM users WHERE uid = ?", user.uid);
-			console.log("[DB] User deleted");
+			log.success("User deleted");
 			success = true;
 		} catch (err) {
-			console.error("[DB] Error while deleting user:", err);
+			log.error("Error while deleting user:", { err });
 		}
 
 		return success;
@@ -322,7 +325,7 @@ class DB {
 				insertStmt.run({ id: tag._id, name: tag.name, uid: tag.uid });
 			}
 
-			console.log(`[DB] ${tags.length} Tag(s) added`);
+			log.success(`${tags.length} Tag(s) added`);
 		}
 	}
 
@@ -410,18 +413,18 @@ class DB {
 						punctuation: result?.punctuation ?? 0,
 						isPb: result?.isPb ?? 0,
 					});
-					// console.log(`[DB] Done saving result ${i} of ${results.length}`);
-				} catch (error) {
-					console.error(
-						`[DB] Error while inserting result ${i} of ${results.length} : `,
-						error,
+					// log.log(`Done saving result ${i} of ${results.length}`);
+				} catch (err) {
+					log.error(
+						`Error while inserting result ${i} of ${results.length} : `,
+						{ err },
 					);
-					// console.debug(insertStmt);
+					// log.debug(insertStmt);
 					break;
 				}
 			}
 
-			console.log(`[DB] ${results.length - 1} Result(s) added`);
+			log.success(`${results.length - 1} Result(s) added`);
 		}
 	}
 
@@ -458,11 +461,11 @@ class DB {
 					tags: JSON.stringify([]),
 					isPb: isPB,
 				});
-			} catch (error) {
-				console.error("[DB] Error while inserting manual result:", error);
+			} catch (err) {
+				log.error("Error while inserting manual result:", { err });
 			}
 
-			console.log(`[DB] Manual result added`);
+			log.success(`Manual result added`);
 		}
 	}
 
@@ -537,8 +540,8 @@ ORDER BY rr.language DESC, rr.wpm DESC;`);
 				getStartOfMonthTimestamp(month + 1) / 1000,
 			);
 
-			console.debug(
-				`[DB] Fetching leaderboard for ${uid ?? "all users"} for the month ${
+			log.debug(
+				`Fetching leaderboard for ${uid ?? "all users"} for the month ${
 					getMonthName(month)
 				}`,
 			);
@@ -597,8 +600,8 @@ WHERE
 				getStartOfMonthTimestamp(month + 1) / 1000,
 			);
 
-			console.debug(
-				`[DB] Fetching best WPM for ${
+			log.debug(
+				`Fetching best WPM for ${
 					uid ? this.getNameFromUID(uid) : "all users"
 				} for the month ${getMonthName(month)}`,
 			);

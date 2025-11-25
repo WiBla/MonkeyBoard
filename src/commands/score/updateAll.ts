@@ -3,6 +3,7 @@ import {
 	MessageFlags,
 	SlashCommandBuilder,
 } from "discord.js";
+import { log } from "../../index.ts";
 import { Command } from "../../types/client.ts";
 import DB from "../../utils/DB.ts";
 import { isUserDev } from "../../utils/utils.ts";
@@ -35,7 +36,7 @@ export default {
 		const ignoreDNT = interaction.options.getBoolean("ignore-dnt") ?? false;
 
 		const { userCount, updateCount } = await DB.updateAll(ignoreDNT);
-		console.log(
+		log.success(
 			`[UpdateAll] Updated ${updateCount} results for ${userCount} users`,
 		);
 

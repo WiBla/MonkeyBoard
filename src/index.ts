@@ -4,7 +4,13 @@ import commands from "./commands/index.ts";
 import events from "./events/index.ts";
 import { TSClient } from "./types/client.ts";
 import DB from "./utils/DB.ts";
+import { Logger } from "./utils/Logger.ts";
 import { formatLeaderboard, isProd } from "./utils/utils.ts";
+
+export const log = new Logger({
+	name: "BOT",
+	level: isProd ? "INFO" : "DEBUG",
+});
 
 // #region Basic setup
 const DISCORD_TOKEN = Deno.env.get("DISCORD_TOKEN");
@@ -12,13 +18,13 @@ const PUBLIC_KEY = Deno.env.get("PUBLIC_KEY");
 const APP_ID = Deno.env.get("APP_ID");
 
 if (!DISCORD_TOKEN || !PUBLIC_KEY || !APP_ID) {
-	console.error(".env file not properly configured");
+	log.error(".env file not properly configured");
 	Deno.exit(1);
 }
 // #endregion Basic setup
 
 // #region Create Discord client
-console.log("[BOT] Starting up client...");
+log.info("Starting up client...");
 
 const client = new Client({ intents: [GatewayIntentBits.Guilds] }) as TSClient;
 
@@ -49,11 +55,11 @@ client.login(DISCORD_TOKEN);
 new CronJob(
 	"0 9 1 * *",
 	async () => {
-		console.log("[CRON] Fetching latest leaderboard data...");
+		log.info("[CRON] Fetching latest leaderboard data...");
 
 		try {
 			const { userCount, updateCount } = await DB.updateAll();
-			console.log(
+			log.success(
 				`[UpdateAll] Updated ${updateCount} results for ${userCount} users`,
 			);
 
@@ -72,8 +78,8 @@ new CronJob(
 					month,
 				));
 			}
-		} catch (error) {
-			console.error("[BOT] Error creating monthly leaderboard", error);
+		} catch (err) {
+			log.error("Error creating monthly leaderboard", { err });
 		}
 	},
 	null,
@@ -84,11 +90,11 @@ new CronJob(
 new CronJob(
 	"0 9 * * 6",
 	async () => {
-		console.log("[CRON] Updating everyone's score");
+		log.info("[CRON] Updating everyone's score");
 
 		try {
 			const { userCount, updateCount } = await DB.updateAll();
-			console.log(
+			log.success(
 				`[UpdateAll] Updated ${updateCount} results for ${userCount} users`,
 			);
 
@@ -115,8 +121,8 @@ new CronJob(
 					},
 				});
 			}
-		} catch (error) {
-			console.error("[BOT] Error creating daily leaderboard", error);
+		} catch (err) {
+			log.error("Error creating daily leaderboard", { err });
 		}
 	},
 	null,
@@ -127,15 +133,15 @@ new CronJob(
 new CronJob(
 	"@daily",
 	async () => {
-		console.log("[CRON] Updating everyone's score");
+		log.info("[CRON] Updating everyone's score");
 
 		try {
 			const { userCount, updateCount } = await DB.updateAll();
-			console.log(
+			log.success(
 				`[UpdateAll] Updated ${updateCount} results for ${userCount} users`,
 			);
-		} catch (error) {
-			console.error("[BOT] Error creating daily leaderboard", error);
+		} catch (err) {
+			log.error("Error creating daily leaderboard", { err });
 		}
 	},
 	null,

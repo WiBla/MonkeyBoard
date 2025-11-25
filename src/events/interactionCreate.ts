@@ -1,13 +1,19 @@
 import { BaseInteraction, Collection, Events, MessageFlags } from "discord.js";
 import { TSClient } from "..//types/client.ts";
+import { log } from "../index.ts";
 import { Event } from "../types/client.ts";
 
 export default {
 	name: Events.InteractionCreate,
 	async execute(interaction: BaseInteraction) {
 		if (!interaction.isChatInputCommand()) return;
-		console.debug(
-			`[CMD] ${interaction.user.globalName} /${interaction.commandName}`,
+
+		const channelName = await interaction.client.channels.fetch(
+			interaction.channelId,
+		)?.name || interaction.channelId;
+
+		log.debug(
+			`#${channelName} ${interaction.user.globalName} /${interaction.commandName}`,
 		);
 
 		const command = (interaction.client as TSClient).commands.get(
@@ -19,10 +25,8 @@ export default {
 				content: "Commande inconnue",
 				flags: MessageFlags.Ephemeral,
 			});
-			console.error(
-				`No command matching ${interaction.commandName} was found.`,
-				(interaction.client as TSClient).commands,
-				"\nDid you forget to export the command from the folder?",
+			log.error(
+				`No command matching ${interaction.commandName} was found.\nDid you forget to export the command from the folder?`,
 			);
 			return;
 		}
@@ -60,8 +64,8 @@ export default {
 
 		try {
 			await command.execute(interaction);
-		} catch (error) {
-			console.error("[BOT]", error);
+		} catch (err) {
+			log.error("Erreur lors de l'execution de la commande", { err });
 			if (interaction.replied || interaction.deferred) {
 				await interaction.followUp({
 					content: "There was an error whlie executing this command!",

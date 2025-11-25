@@ -1,5 +1,6 @@
 import { BaseInteraction, Events } from "discord.js";
 import { confirm } from "../commands/user/unlink.ts";
+import { log } from "../index.ts";
 import { Event } from "../types/client.ts";
 
 export default {
@@ -7,8 +8,8 @@ export default {
 	async execute(interaction: BaseInteraction) {
 		if (!interaction.isButton()) return;
 
-		console.log(
-			`[BOT] ${interaction.user.globalName} clicked button ${interaction.customId}`,
+		log.info(
+			`${interaction.user.globalName} clicked button ${interaction.customId}`,
 		);
 
 		if (interaction.customId === "unlink_confirm") {
