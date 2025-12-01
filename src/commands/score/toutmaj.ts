@@ -10,7 +10,7 @@ import { isUserDev } from "../../utils/utils.ts";
 
 export default {
 	data: new SlashCommandBuilder()
-		.setName("updateall")
+		.setName("toutmaj")
 		.setDescription("(Dev only) Met à jours les scores de tout le monde")
 		.addBooleanOption((bool) =>
 			bool.setName("ignore-dnt").setDescription(
@@ -37,7 +37,7 @@ export default {
 
 		const { userCount, updateCount } = await DB.updateAll(ignoreDNT);
 		log.success(
-			`[UpdateAll] Updated ${updateCount} results for ${userCount} users`,
+			`[toutMAJ] Updated ${updateCount} results for ${userCount} users`,
 		);
 
 		return interaction.editReply({

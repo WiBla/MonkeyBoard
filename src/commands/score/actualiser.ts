@@ -13,22 +13,25 @@ export default {
 		.setName("actualiser")
 		.setDescription("Met à jours vos scores"),
 	async execute(interaction: ChatInputCommandInteraction) {
+		await interaction.reply({
+			flags: MessageFlags.Ephemeral,
+			content: "⌛",
+		});
+
 		const userId = interaction.user.id;
 
 		// Fetch user data from the database
 		const user = DB.getUserByDiscordId(userId);
 		if (!user) {
-			await interaction.reply({
-				flags: MessageFlags.Ephemeral,
+			await interaction.editReply({
 				content:
-					"Vous n'avez pas encore lié votre ApeKey. Utilisez la commande \`/register\` pour le faire.",
+					"Vous n'avez pas encore lié votre ApeKey. Utilisez la commande \`/connexion\` pour le faire.",
 			});
 			return;
 		}
 
 		if (user.dnt) {
-			await interaction.reply({
-				flags: MessageFlags.Ephemeral,
+			await interaction.editReply({
 				content:
 					"Vous avez quitté la compétition. Utilisez \`/rejoindre\` si vous souhaitez à nouveau participer !",
 			});
@@ -40,8 +43,7 @@ export default {
 		const newResults = await monkey.updateResults();
 		const tags = await monkey.updateTags();
 
-		await interaction.reply({
-			flags: MessageFlags.Ephemeral,
+		await interaction.editReply({
 			content:
 				`Vos scores ont été mis à jour ! ${newResults} nouveaux résultat(s) ont été ajouté(s). Vous avez ${tags.length} tag(s)`,
 		});

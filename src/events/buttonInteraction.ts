@@ -1,5 +1,5 @@
 import { BaseInteraction, Events } from "discord.js";
-import { confirm } from "../commands/user/unlink.ts";
+import { confirm } from "../commands/user/deconnexion.ts";
 import { log } from "../index.ts";
 import { Event } from "../types/client.ts";
 

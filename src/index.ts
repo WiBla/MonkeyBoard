@@ -60,7 +60,7 @@ new CronJob(
 		try {
 			const { userCount, updateCount } = await DB.updateAll();
 			log.success(
-				`[UpdateAll] Updated ${updateCount} results for ${userCount} users`,
+				`[ToutMAJ] Updated ${updateCount} results for ${userCount} users`,
 			);
 
 			const leaderboardId = isProd
@@ -94,7 +94,7 @@ new CronJob(
 		try {
 			const { userCount, updateCount } = await DB.updateAll();
 			log.success(
-				`[UpdateAll] Updated ${updateCount} results for ${userCount} users`,
+				`[ToutMAJ] Updated ${updateCount} results for ${userCount} users`,
 			);
 
 			const channelId = isProd ? "1101591223040491682" : "1425221573186682891";
@@ -112,7 +112,7 @@ new CronJob(
 						leaderboardResult,
 						{ type: "temporary", month },
 					) +
-						"\nVous voulez participer ? N'hésitez pas à lier votre compte avec la commande \`/register\` !",
+						"\nVous voulez participer ? N'hésitez pas à lier votre compte avec la commande \`/connexion\` !",
 					// Do NOT mention anyone
 					allowedMentions: {
 						parse: [],
@@ -136,7 +136,7 @@ new CronJob(
 		try {
 			const { userCount, updateCount } = await DB.updateAll();
 			log.success(
-				`[UpdateAll] Updated ${updateCount} results for ${userCount} users`,
+				`[ToutMAJ] Updated ${updateCount} results for ${userCount} users`,
 			);
 		} catch (err) {
 			log.error("Error creating daily leaderboard", { err });

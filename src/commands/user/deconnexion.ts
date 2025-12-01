@@ -15,7 +15,7 @@ import { isUserDev } from "../../utils/utils.ts";
 
 export default {
 	data: new SlashCommandBuilder()
-		.setName("unlink")
+		.setName("deconnexion")
 		.setDescription("Supprimez votre compte et toutes ses données"),
 	async execute(interaction: ChatInputCommandInteraction) {
 		const text1 = new TextDisplayBuilder().setContent(

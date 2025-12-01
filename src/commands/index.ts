@@ -1,24 +1,24 @@
 import { Command } from "../types/client.ts";
-import addScore from "./score/addScore.ts";
-import getMyScore from "./score/getMyScore.ts";
-import leaderboard from "./score/leaderboard.ts";
-import oldLeaderboard from "./score/oldLeaderboard.ts";
-import updateAll from "./score/updateAll.ts";
-import updateMyScore from "./score/updateMyScore.ts";
-import join from "./user/join.ts";
-import quit from "./user/quit.ts";
-import register from "./user/register.ts";
-import unlink from "./user/unlink.ts";
+import actualiser from "./score/actualiser.ts";
+import dernierpodium from "./score/dernierpodium.ts";
+import podium from "./score/podium.ts";
+import scoremanuel from "./score/scoremanuel.ts";
+import toutmaj from "./score/toutmaj.ts";
+import voirmonscore from "./score/voirmonscore.ts";
+import connexion from "./user/connexion.ts";
+import deconnexion from "./user/deconnexion.ts";
+import quitter from "./user/quitter.ts";
+import rejoindre from "./user/rejoindre.ts";
 
 export default [
-	addScore,
-	getMyScore,
-	leaderboard,
-	oldLeaderboard,
-	updateAll,
-	updateMyScore,
-	join,
-	quit,
-	register,
-	unlink,
+	actualiser,
+	dernierpodium,
+	podium,
+	scoremanuel,
+	toutmaj,
+	voirmonscore,
+	connexion,
+	deconnexion,
+	quitter,
+	rejoindre,
 ] as Command[];

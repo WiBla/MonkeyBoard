@@ -19,7 +19,7 @@ export default {
 			await interaction.reply({
 				flags: MessageFlags.Ephemeral,
 				content:
-					"Vous n'avez pas encore lié votre ApeKey. Utilisez la commande \`/register\` pour le faire.",
+					"Vous n'avez pas encore lié votre ApeKey. Utilisez la commande \`/connexion\` pour le faire.",
 			});
 			return;
 		}
@@ -45,7 +45,10 @@ export default {
 
 		await interaction.reply({
 			flags: MessageFlags.Ephemeral,
-			content: formatLeaderboard(leaderboard, { type: "personal" }),
+			content: formatLeaderboard(leaderboard, {
+				type: "personal",
+				visibility: { showDiff: true, showPB: true, showTags: true },
+			}),
 		});
 		return;
 	},

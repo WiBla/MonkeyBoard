@@ -35,9 +35,9 @@ export default {
 			return;
 		}
 
-		const showTags = interaction.options.getBoolean("tags") ?? false;
+		const showTags = interaction.options.getBoolean("tags") ?? true;
 		const showDiff = interaction.options.getBoolean("diff") ?? false;
-		const showPB = interaction.options.getBoolean("pb") ?? false;
+		const showPB = interaction.options.getBoolean("pb") ?? true;
 
 		log.debug("Visibility in leaderboard.ts", { showTags, showDiff, showPB });
 

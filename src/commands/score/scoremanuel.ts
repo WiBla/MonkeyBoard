@@ -10,7 +10,7 @@ import { isUserDev } from "../../utils/utils.ts";
 
 export default {
 	data: new SlashCommandBuilder()
-		.setName("addscore")
+		.setName("scoremanuel")
 		.setDescription("(Dev only) Ajoute un score manuellement")
 		.addMentionableOption((author) =>
 			author.setName("author").setDescription("author").setRequired(true)

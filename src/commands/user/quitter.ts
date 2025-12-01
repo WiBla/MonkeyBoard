@@ -8,9 +8,9 @@ import DB from "../../utils/DB.ts";
 
 export default {
 	data: new SlashCommandBuilder()
-		.setName("rejoindre")
+		.setName("quitter")
 		.setDescription(
-			"Rejoindre la compétition. Vous pourrez toujours /quitter si vous changez d'avis.",
+			"Quittez la compétition. Vous pourrez toujours /rejoindre à tout moment",
 		),
 	async execute(interaction: ChatInputCommandInteraction) {
 		const userId = interaction.user.id;
@@ -21,26 +21,26 @@ export default {
 			await interaction.reply({
 				flags: MessageFlags.Ephemeral,
 				content:
-					"Vous n'avez pas encore lié votre ApeKey. Utilisez la commande \`/register\` pour le faire.",
+					"Vous n'avez pas encore lié votre ApeKey. Utilisez la commande \`/connexion\` pour le faire.",
 			});
 			return;
 		}
 
-		if (user.dnt === 0) {
+		if (user.dnt === 1) {
 			await interaction.reply({
 				flags: MessageFlags.Ephemeral,
-				content: "Vous avez déjà rejoins la compétition 👍",
+				content: "Vous avez déjà quitté la compétition 👍",
 			});
 			return;
 		}
 
-		DB.setDNT(user, false);
+		DB.setDNT(user, true);
 
 		await interaction.reply({
 			flags: MessageFlags.Ephemeral,
 			content:
-				"Compris 👍 Vos scores sont à nouveau trackés. Si vous changez d'avis, faites la commande \`/quitter\` !",
+				"Compris 👍 Vos scores ne sont plus trackés. Si vous changez d'avis, faites la commande \`/rejoindre\` !",
 		});
 		return;
 	},
-} as Command;
+} as unknown as Command;
