@@ -3,10 +3,12 @@ import {
 	MessageFlags,
 	SlashCommandBuilder,
 } from "discord.js";
-import { log } from "../../index.ts";
 import { Command } from "../../types/client.ts";
 import DB from "../../utils/DB.ts";
+import Logger from "../../utils/Logger.ts";
 import { isUserDev } from "../../utils/utils.ts";
+
+const log = new Logger({ name: "ToutMAJ" });
 
 export default {
 	data: new SlashCommandBuilder()
@@ -37,7 +39,7 @@ export default {
 
 		const { userCount, updateCount } = await DB.updateAll(ignoreDNT);
 		log.success(
-			`[toutMAJ] Updated ${updateCount} results for ${userCount} users`,
+			`Updated ${updateCount} results for ${userCount} users`,
 		);
 
 		return interaction.editReply({

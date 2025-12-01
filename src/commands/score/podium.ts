@@ -3,7 +3,6 @@ import {
 	MessageFlags,
 	SlashCommandBuilder,
 } from "discord.js";
-import { log } from "../../index.ts";
 import { Command } from "../../types/client.ts";
 import DB from "../../utils/DB.ts";
 import { formatLeaderboard } from "../../utils/utils.ts";
@@ -38,8 +37,6 @@ export default {
 		const showTags = interaction.options.getBoolean("tags") ?? true;
 		const showDiff = interaction.options.getBoolean("diff") ?? false;
 		const showPB = interaction.options.getBoolean("pb") ?? true;
-
-		log.debug("Visibility in leaderboard.ts", { showTags, showDiff, showPB });
 
 		await interaction.reply({
 			flags: MessageFlags.Ephemeral,
