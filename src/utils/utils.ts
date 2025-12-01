@@ -5,12 +5,14 @@ export function isUserDev(discordId: string): boolean {
 }
 
 export function getStartOfMonthTimestamp(month?: number): number {
-	if (month !== undefined && (month < 0 || month > 11)) {
-		throw new Error("Month must be between 0 and 11");
-	}
-
 	const now = new Date();
-	return new Date(now.getFullYear(), month || now.getMonth(), 1).getTime();
+	const year = now.getFullYear();
+
+	const target = month !== undefined
+		? new Date(year, month, 1)
+		: new Date(year, now.getMonth(), 1);
+
+	return target.getTime();
 }
 
 export function getMonthName(month: number): string {
