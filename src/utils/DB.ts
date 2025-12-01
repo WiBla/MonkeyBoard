@@ -541,9 +541,9 @@ ORDER BY rr.language DESC, rr.wpm DESC;`);
 			);
 
 			log.debug(
-				`Fetching leaderboard for ${uid ?? "all users"} for the month ${
-					getMonthName(month)
-				}`,
+				`Fetching leaderboard for ${
+					uid ? this.getNameFromUID(uid) : "all users"
+				} for the month ${getMonthName(month)}`,
 			);
 
 			// Necessary because SQLite will check if each parameter is in the query and error if not

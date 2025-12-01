@@ -1,4 +1,10 @@
-import { BaseInteraction, Collection, Events, MessageFlags } from "discord.js";
+import {
+	BaseInteraction,
+	Collection,
+	Events,
+	MessageFlags,
+	TextChannel,
+} from "discord.js";
 import { TSClient } from "..//types/client.ts";
 import { log } from "../index.ts";
 import { Event } from "../types/client.ts";
@@ -8,11 +14,14 @@ export default {
 	async execute(interaction: BaseInteraction) {
 		if (!interaction.isChatInputCommand()) return;
 
-		const channelName = await interaction.client.channels.fetch(
+		const channel = await interaction.client.channels.fetch(
 			interaction.channelId,
-		)?.name || interaction.channelId;
+		);
+		const channelName =
+			(channel && "name" in channel && (channel as TextChannel).name) ||
+			interaction.channelId;
 
-		log.debug(
+		log.info(
 			`#${channelName} ${interaction.user.globalName} /${interaction.commandName}`,
 		);
 
