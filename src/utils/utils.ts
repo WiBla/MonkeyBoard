@@ -40,23 +40,38 @@ function formatLastPB(wpm: number, lastPB: number | null): string {
 }
 
 const languages: { title: string; filter: string | null }[] = [
-	{ title: "FR Stock", filter: "french" },
-	{ title: "FR 600k", filter: "french_600k" },
-	{ title: "EN Stock", filter: null },
-	{ title: "EN 450k", filter: "english_450k" },
+	{ title: "🇫🇷", filter: "french" },
+	{ title: "🇫🇷 600k", filter: "french_600k" },
+	{ title: "🇬🇧", filter: null },
+	{ title: "🇬🇧 450k", filter: "english_450k" },
 ];
+
+interface formatLeaderboardOptions {
+	type: "personal" | "temporary" | "monthly";
+	month?: number;
+	visibility?: { showTags: boolean; showDiff: boolean; showPB: boolean };
+}
 
 export function formatLeaderboard(
 	leaderboard: LeaderboardMapped[] | LeaderboardWithBestWPM[],
-	type: "personal" | "temporary" | "monthly",
-	month: number = new Date().getMonth(),
+	opts: formatLeaderboardOptions,
 ): string {
 	if (!leaderboard || leaderboard.length === 0) {
 		return "Aucun résultat à afficher.";
 	}
 
 	let content = "";
+	const { type } = opts;
+	let { month, visibility } = opts;
+	month ??= new Date().getMonth();
+	visibility = {
+		...opts.visibility,
+		showTags: opts?.visibility?.showTags ?? true,
+		showDiff: opts?.visibility?.showDiff ?? true,
+		showPB: opts?.visibility?.showPB ?? true,
+	};
 
+	// Header
 	switch (type) {
 		case "personal":
 			content = `## Vos résultats ${getMonthName(month)} ${
@@ -93,30 +108,21 @@ export function formatLeaderboard(
 
 		const isManual = id.includes("manual") ? " (⚠️ score manuel)" : "";
 
-		// TODO this could be replaced by a "simplified" bool option in the /podium cmd
-		if (type === "temporary") {
-			content += `${prefix}${wpm} wpm ${pbStr}${isManual}\n`;
-		} else {
-			content += `${prefix}${wpm} wpm ${pbStr}${lastPBStr}${tag_names}\n`;
-		}
+		content += `${prefix}${wpm} wpm ${visibility!.showPB ? pbStr : ""}${
+			visibility!.showDiff ? lastPBStr : ""
+		}${visibility!.showTags ? tag_names : ""}${isManual}\n`;
 	}
 
 	for (const language of languages) {
-		content += `${(type === "temporary" ? "" : "## ")}${language.title} :\n`;
+		content += `## ${language.title} :\n`;
 		leaderboard.filter((entry) => entry.language === language.filter).forEach(
 			formatPosition,
 		);
 	}
 
-	switch (type) {
-		case "personal":
-		case "temporary":
-			content +=
-				"\nVous pouvez utiliser la commande \`actualiser\` jusqu'à 30 fois par jours pour être sûr d'avoir vos derniers résultats.";
-			break;
-		case "monthly":
-		default:
-			break;
+	if (type === "personal") {
+		content +=
+			"\nVous pouvez utiliser la commande \`actualiser\` jusqu'à 30 fois par jours pour être sûr d'avoir vos derniers résultats.";
 	}
 
 	return content;

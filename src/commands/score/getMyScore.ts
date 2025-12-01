@@ -45,7 +45,7 @@ export default {
 
 		await interaction.reply({
 			flags: MessageFlags.Ephemeral,
-			content: formatLeaderboard(leaderboard, "personal"),
+			content: formatLeaderboard(leaderboard, { type: "personal" }),
 		});
 		return;
 	},

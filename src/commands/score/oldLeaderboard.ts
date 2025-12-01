@@ -28,8 +28,7 @@ export default {
 			flags: MessageFlags.Ephemeral,
 			content: formatLeaderboard(
 				leaderboard,
-				"monthly",
-				month,
+				{ type: "monthly", month },
 			),
 			allowedMentions: {
 				parse: [],
