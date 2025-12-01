@@ -56,7 +56,7 @@ export async function confirm(interaction: ButtonInteraction) {
 	} catch (err) {
 		log.error(
 			`An error occured while deleting user ${userId}`,
-			{ err },
+			err,
 		);
 		return await interaction.editReply({
 			content:

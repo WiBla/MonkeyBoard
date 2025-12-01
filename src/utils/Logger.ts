@@ -37,7 +37,7 @@ export interface LoggerOptions {
 	includeCaller?: boolean;
 }
 
-export type LogMeta = Record<string, unknown> | string | undefined;
+export type LogMeta = Record<string, unknown> | string | undefined | unknown;
 
 interface QueueItem {
 	text: string;

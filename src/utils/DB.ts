@@ -184,7 +184,7 @@ class DB {
 			log.success("User registered successfully");
 			return true;
 		} catch (err) {
-			log.error("Error while registering user", { err });
+			log.error("Error while registering user", err);
 			throw err;
 		}
 	}
@@ -256,12 +256,12 @@ class DB {
 					user.updateTags();
 					updateCount += results;
 				} catch (err) {
-					log.error("Error while updating leaderboard", { err });
+					log.error("Error while updating leaderboard", err);
 					throw err;
 				}
 			}
 		} catch (err) {
-			log.error("Cannot get users", { err });
+			log.error("Cannot get users", err);
 		}
 
 		return { userCount, updateCount };
@@ -300,7 +300,7 @@ class DB {
 			log.success("User deleted");
 			success = true;
 		} catch (err) {
-			log.error("Error while deleting user:", { err });
+			log.error("Error while deleting user:", err);
 		}
 
 		return success;
@@ -417,7 +417,7 @@ class DB {
 				} catch (err) {
 					log.error(
 						`Error while inserting result ${i} of ${results.length} : `,
-						{ err },
+						err,
 					);
 					// log.debug(insertStmt);
 					break;
@@ -462,7 +462,7 @@ class DB {
 					isPb: isPB,
 				});
 			} catch (err) {
-				log.error("Error while inserting manual result:", { err });
+				log.error("Error while inserting manual result:", err);
 			}
 
 			log.success(`Manual result added`);

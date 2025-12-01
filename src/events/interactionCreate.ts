@@ -74,7 +74,7 @@ export default {
 		try {
 			await command.execute(interaction);
 		} catch (err) {
-			log.error("Erreur lors de l'execution de la commande", { err });
+			log.error("Erreur lors de l'execution de la commande", err);
 			if (interaction.replied || interaction.deferred) {
 				await interaction.followUp({
 					content: "There was an error whlie executing this command!",

@@ -78,7 +78,7 @@ new CronJob(
 				));
 			}
 		} catch (err) {
-			log.error("Error creating monthly leaderboard", { err });
+			log.error("Error creating monthly leaderboard", err);
 		}
 	},
 	null,
@@ -120,7 +120,7 @@ new CronJob(
 				});
 			}
 		} catch (err) {
-			log.error("Error creating daily leaderboard", { err });
+			log.error("Error creating daily leaderboard", err);
 		}
 	},
 	null,
@@ -139,7 +139,7 @@ new CronJob(
 				`[ToutMAJ] Updated ${updateCount} results for ${userCount} users`,
 			);
 		} catch (err) {
-			log.error("Error creating daily leaderboard", { err });
+			log.error("Error creating daily leaderboard", err);
 		}
 	},
 	null,

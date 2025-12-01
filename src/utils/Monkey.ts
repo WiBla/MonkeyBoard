@@ -61,7 +61,7 @@ class Monkey {
 			// Get user's tags
 			this.updateTags();
 		} catch (err) {
-			log.error("completeProfileFromAPI() failed", { err });
+			log.error("completeProfileFromAPI() failed", err);
 			throw err;
 		}
 
@@ -106,7 +106,7 @@ class Monkey {
 
 			throw new APIError(`Unexpected HTTP status: ${res.status}`);
 		} catch (err) {
-			log.error("isKeyValid() failed", { err });
+			log.error("isKeyValid() failed", err);
 			throw err;
 		}
 	}
@@ -132,7 +132,7 @@ class Monkey {
 				} catch (err) {
 					log.error(
 						`Error while trying to save ${this.name} as inactive`,
-						{ err },
+						err,
 					);
 				}
 				throw new InactiveApeKeyError();
@@ -155,7 +155,7 @@ class Monkey {
 			log.debug("Profile by ID", data);
 			return (data?.data ?? {}) as Profile;
 		} catch (err) {
-			log.error("Failed to fetch profile:", { err });
+			log.error("Failed to fetch profile:", err);
 			return {} as Profile;
 		}
 	}
@@ -166,7 +166,7 @@ class Monkey {
 			log.debug("Profile by username", data);
 			return (data?.data ?? {}) as Profile;
 		} catch (err) {
-			log.error("Failed to fetch profile:", { err });
+			log.error("Failed to fetch profile:", err);
 			return {} as Profile;
 		}
 	}
@@ -179,7 +179,7 @@ class Monkey {
 			// log.debug("Tags", data);
 			return (data?.data ?? []) as Tags[];
 		} catch (err) {
-			log.error("Failed to fetch tags:", { err });
+			log.error("Failed to fetch tags:", err);
 			return [] as Tags[];
 		}
 	}
@@ -201,7 +201,7 @@ class Monkey {
 				return tags;
 			}
 		} catch (err) {
-			log.error(`Error while updating ${this.name} results`, { err });
+			log.error(`Error while updating ${this.name} results`, err);
 			return 0;
 		}
 	}
@@ -245,7 +245,7 @@ class Monkey {
 
 			return trueResults;
 		} catch (err) {
-			log.error(`Error while updating ${this.name} results`, { err });
+			log.error(`Error while updating ${this.name} results`, err);
 			return 0;
 		}
 	}
@@ -266,7 +266,7 @@ class Monkey {
 			);
 			return (data?.data ?? []) as Result[];
 		} catch (err) {
-			log.error("Failed to fetch results:", { err });
+			log.error("Failed to fetch results:", err);
 			throw err;
 		}
 	}
@@ -277,7 +277,7 @@ class Monkey {
 			log.debug("Last result", data);
 			return (data?.data ?? {}) as LastResult;
 		} catch (err) {
-			log.error("Failed to fetch last result:", { err });
+			log.error("Failed to fetch last result:", err);
 			throw err;
 		}
 	}
