@@ -101,14 +101,32 @@ export function formatLeaderboard(
 		const lastPB = (entry as LeaderboardWithBestWPM).lastPB ?? null;
 
 		++index;
-		const prefix = type === "personal" ? "" : `${index}. <@${discordId}> : `;
+		let indexStr = "";
+		switch (index) {
+			case 1:
+				indexStr = "🥇";
+				break;
+			case 2:
+				indexStr = "🥈";
+				break;
+			case 3:
+				indexStr = "🥉";
+				break;
+			default:
+				indexStr = index.toString();
+				break;
+		}
+
+		const prefix = type === "personal" ? "" : `${indexStr}. <@${discordId}> : `;
 		wpm = Math.floor(wpm);
 		// acc = Math.floor(acc);
 		const pbStr = isPb ? " **PB 🔥**" : "";
 		tag_names = tag_names ? ` (${tag_names})` : "";
 		const lastPBStr = formatLastPB(wpm, lastPB);
 
-		const isManual = id.includes("manual") ? " (⚠️ score manuel)" : "";
+		const isManual = type !== "monthly" && id.includes("manual")
+			? " (⚠️ score manuel)"
+			: "";
 
 		content += `${prefix}${wpm} wpm ${visibility!.showPB ? pbStr : ""}${
 			visibility!.showDiff ? lastPBStr : ""

@@ -74,7 +74,11 @@ new CronJob(
 
 				await (leaderboard as TextChannel).send(formatLeaderboard(
 					leaderboardResult,
-					{ type: "monthly", month },
+					{
+						type: "monthly",
+						month,
+						visibility: { showDiff: true, showPB: true, showTags: true },
+					},
 				));
 			}
 		} catch (err) {
@@ -110,7 +114,11 @@ new CronJob(
 				await (cooldownChannel as TextChannel).send({
 					content: formatLeaderboard(
 						leaderboardResult,
-						{ type: "temporary", month },
+						{
+							type: "temporary",
+							month,
+							visibility: { showDiff: true, showTags: false, showPB: true },
+						},
 					) +
 						"\nVous voulez participer ? N'hésitez pas à lier votre compte avec la commande \`/connexion\` !",
 					// Do NOT mention anyone
