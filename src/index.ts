@@ -5,7 +5,12 @@ import events from "./events/index.ts";
 import { TSClient } from "./types/client.ts";
 import DB from "./utils/DB.ts";
 import { Logger } from "./utils/Logger.ts";
-import { formatLeaderboard, isProd } from "./utils/utils.ts";
+import {
+	formatLeaderboard,
+	getMonthName,
+	isProd,
+	MonthOffset,
+} from "./utils/utils.ts";
 
 export const log = new Logger({
 	name: "BOT",
@@ -67,16 +72,17 @@ new CronJob(
 				? "1101583276667310180"
 				: "1417555936733696050";
 			const leaderboard = await client.channels.fetch(leaderboardId);
-			const month = new Date().getMonth() - 1;
 
 			if (leaderboard && leaderboard.isTextBased() && "send" in leaderboard) {
-				const leaderboardResult = DB.getLeaderboardWithBestWPM({ month });
+				const leaderboardResult = DB.getLeaderboardWithBestWPM({
+					offset: MonthOffset.Compare,
+				});
 
 				await (leaderboard as TextChannel).send(formatLeaderboard(
 					leaderboardResult,
 					{
 						type: "monthly",
-						month,
+						monthName: getMonthName(MonthOffset.Previous),
 						visibility: { showDiff: true, showPB: true, showTags: true },
 					},
 				));
@@ -103,20 +109,21 @@ new CronJob(
 
 			const channelId = isProd ? "1101591223040491682" : "1425221573186682891";
 			const cooldownChannel = await client.channels.fetch(channelId);
-			const month = new Date().getMonth();
 
 			if (
 				cooldownChannel && cooldownChannel.isTextBased() &&
 				"send" in cooldownChannel
 			) {
-				const leaderboardResult = DB.getLeaderboardWithBestWPM({ month });
+				const leaderboardResult = DB.getLeaderboardWithBestWPM({
+					offset: MonthOffset.Previous,
+				});
 
 				await (cooldownChannel as TextChannel).send({
 					content: formatLeaderboard(
 						leaderboardResult,
 						{
 							type: "temporary",
-							month,
+							monthName: getMonthName(MonthOffset.Now),
 							visibility: { showDiff: true, showTags: false, showPB: true },
 						},
 					) +

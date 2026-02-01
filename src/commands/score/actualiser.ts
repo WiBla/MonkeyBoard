@@ -15,7 +15,7 @@ export default {
 	async execute(interaction: ChatInputCommandInteraction) {
 		await interaction.reply({
 			flags: MessageFlags.Ephemeral,
-			content: "⌛",
+			content: "Travail en cours...",
 		});
 
 		const userId = interaction.user.id;

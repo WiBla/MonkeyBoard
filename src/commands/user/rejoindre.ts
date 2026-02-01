@@ -13,13 +13,17 @@ export default {
 			"Rejoindre la compétition. Vous pourrez toujours /quitter si vous changez d'avis.",
 		),
 	async execute(interaction: ChatInputCommandInteraction) {
+		await interaction.reply({
+			flags: MessageFlags.Ephemeral,
+			content: "Travail en cours...",
+		});
+
 		const userId = interaction.user.id;
 
 		// Fetch user data from the database
 		const user = DB.getUserByDiscordId(userId);
 		if (!user) {
-			await interaction.reply({
-				flags: MessageFlags.Ephemeral,
+			await interaction.editReply({
 				content:
 					"Vous n'avez pas encore lié votre ApeKey. Utilisez la commande \`/connexion\` pour le faire.",
 			});
@@ -27,8 +31,7 @@ export default {
 		}
 
 		if (user.dnt === 0) {
-			await interaction.reply({
-				flags: MessageFlags.Ephemeral,
+			await interaction.editReply({
 				content: "Vous avez déjà rejoins la compétition 👍",
 			});
 			return;
@@ -36,8 +39,7 @@ export default {
 
 		DB.setDNT(user, false);
 
-		await interaction.reply({
-			flags: MessageFlags.Ephemeral,
+		await interaction.editReply({
 			content:
 				"Compris 👍 Vos scores sont à nouveau trackés. Si vous changez d'avis, faites la commande \`/quitter\` !",
 		});

@@ -3,7 +3,7 @@ import { APIResponse } from "../types/monkeytype.d.ts";
 import DB from "./DB.ts";
 import { APIError, InactiveApeKeyError, InvalidApeKeyError } from "./errors.ts";
 import { Logger } from "./Logger.ts";
-import { getStartOfMonthTimestamp, isProd } from "./utils.ts";
+import { isProd } from "./utils.ts";
 
 const log = new Logger({ name: "Monkey", level: isProd ? "INFO" : "DEBUG" });
 
@@ -39,7 +39,7 @@ class Monkey {
 		}
 	}
 
-	async completeProfileFromAPI(): Promise<boolean> {
+	async completeProfileFromAPI(username: string | null): Promise<boolean> {
 		try {
 			// Check if key is valid and allows us to get their Monkeytype uid
 			const lastResult = await this.getLastResult();
@@ -47,13 +47,15 @@ class Monkey {
 				throw new Error("Cannot get last result", lastResult);
 			}
 
-			// Get user's username
-			// TODO This can be avoided using the user's discord globalname
-			const profile = await this.getProfileByID(lastResult.uid);
-			if (!profile?.name) throw new Error("Cannot get profile", profile);
+			// Username is defaulted to Discord's globalname to avoid 1 API call
+			if (username === null) {
+				const profile = await this.getProfileByID(lastResult.uid);
+				if (!profile?.name) throw new Error("Cannot get profile", profile);
+				username = profile.name;
+			}
 
 			this.uid = lastResult.uid;
-			this.name = profile.name;
+			this.name = username!;
 
 			// Save user to DB
 			DB.addUser(this);
@@ -79,6 +81,14 @@ class Monkey {
 		this.name = user.name;
 		this.discordId ??= user.discordId;
 		this.DNT = Boolean(user.dnt);
+	}
+
+	ensureValidUser(): asserts this is { uid: string } {
+		if (typeof this.uid !== "string" || this.token.length === 0) {
+			throw new Error(
+				"User must be completed from the DB or the API using 'monkey.completeProfileFrom..'",
+			);
+		}
 	}
 
 	async isKeyValid(token?: string): Promise<boolean> {
@@ -152,7 +162,6 @@ class Monkey {
 			const data = await this.get<Profile>(
 				`/users/${uid}/profile?isUid=true`,
 			);
-			log.debug("Profile by ID", data);
 			return (data?.data ?? {}) as Profile;
 		} catch (err) {
 			log.error("Failed to fetch profile:", err);
@@ -163,7 +172,6 @@ class Monkey {
 	async getProfileByUsername(username: string): Promise<Profile> {
 		try {
 			const data = await this.get<Profile>(`/users/${username}/profile`);
-			log.debug("Profile by username", data);
 			return (data?.data ?? {}) as Profile;
 		} catch (err) {
 			log.error("Failed to fetch profile:", err);
@@ -176,7 +184,6 @@ class Monkey {
 	async getTags(): Promise<Tags[]> {
 		try {
 			const data = await this.get<APIResponse<Tags[]>>("/users/tags");
-			// log.debug("Tags", data);
 			return (data?.data ?? []) as Tags[];
 		} catch (err) {
 			log.error("Failed to fetch tags:", err);
@@ -185,85 +192,110 @@ class Monkey {
 	}
 
 	async updateTags(): Promise<Tags> {
-		if (!this.uid) {
-			throw new Error(
-				"User must be completed from the DB or the API using 'monkey.completeProfileFrom..'",
-			);
-		}
-
 		try {
+			this.ensureValidUser();
+
 			const tags: Tags[] = await this.getTags();
+
 			if (tags.length === 0) {
 				log.info(`No tags found for ${this.name}`);
-			} else {
-				DB.addTags(tags.map((tag) => ({ ...tag, uid: this.uid })));
-				log.success(`Saved ${tags.length} tag(s) for ${this.name}`);
-				return tags;
+				return 0;
 			}
+
+			DB.addTags(tags.map((tag) => ({ ...tag, uid: this.uid })));
+			log.success(`Saved ${tags.length} tag(s) for ${this.name}`);
+
+			// Tags also contains scores with best wpm
+			DB.addResults(this.TagsToResults(tags));
+
+			return tags;
 		} catch (err) {
 			log.error(`Error while updating ${this.name} results`, err);
 			return 0;
 		}
+	}
+
+	TagsToResults(tags: Tags[]): Result[] {
+		const results: Result[] = [];
+
+		for (const tag of tags) {
+			// Time PBs
+			for (const key in tag.personalBests.time) {
+				const scores = tag.personalBests.time[key];
+
+				for (const result of scores) {
+					results.push({
+						...result,
+						_id: "tagpb-" + Math.random().toString().replace("0.", ""),
+						uid: this.uid,
+						mode: "time",
+						mode2: key,
+						tags: [tag._id],
+						isPb: true,
+					});
+				}
+			}
+
+			// Words PBs
+			for (const key in tag.personalBests.words) {
+				const scores = tag.personalBests.words[key];
+
+				for (const result of scores) {
+					results.push({
+						...result,
+						_id: "tagpb-" + Math.random().toString().replace("0.", ""),
+						uid: this.uid,
+						mode: "words",
+						mode2: key,
+						tags: [tag._id],
+						isPb: true,
+					});
+				}
+			}
+		}
+
+		return results;
 	}
 	// #endregion Tags
 
 	// #region Results
-	async updateResults(forceUpdate = false): Promise<number> {
-		if (!this.uid) {
-			throw new Error(
-				"User must be completed from the DB or the API using 'monkey.completeProfileFrom..'",
-			);
-		}
-
+	async updateResults(): Promise<number> {
 		try {
-			let timestamp;
+			this.ensureValidUser();
 
-			if (!forceUpdate) {
-				// Attempts to get the latest result that is already in DB
-				timestamp = DB.getMostRecentTimestamp(this.uid);
-				// Otherwise start from the 1st of the month
-				timestamp ??= getStartOfMonthTimestamp();
-			} else {
-				timestamp = null;
-			}
+			const results = await this.getResults();
 
-			const results = await this.getResults(timestamp);
-			const trueResults = forceUpdate ? results.length : results.length - 1; // API always returns the result from the timestamp
-
-			if (trueResults > 0) {
+			if (results.length > 0) {
 				DB.addResults(results.map((result) => ({
 					...result,
-					uid: this.uid!,
+					uid: this.uid,
 				})));
 
 				log.success(
-					`Done saving ${trueResults} new result(s) for ${this.name}.`,
+					`Done saving ${results.length} new result(s) for ${this.name}`,
 				);
 			} else {
-				log.info(`No new results for ${this.name}.`);
+				log.info(`No new results for ${this.name}`);
 			}
 
-			return trueResults;
+			return results.length;
 		} catch (err) {
 			log.error(`Error while updating ${this.name} results`, err);
 			return 0;
 		}
 	}
 
-	async getResults(
-		timestamp: number | null = null,
-		offset = 0,
-	): Promise<Result[]> {
-		const params = new URLSearchParams();
-		if (timestamp) params.append("onOrAfterTimestamp", timestamp + "");
-		if (offset) params.append("offset", offset + "");
+	async getResults(): Promise<Result[]> {
+		this.ensureValidUser();
 
-		log.debug("Fetching results", params.toString());
+		const timestamp = DB.getMostRecentTimestamp(this.uid);
+
+		const route = `/results${
+			timestamp ? `?onOrAfterTimestamp=${timestamp + 1}` : ""
+		}`;
 
 		try {
-			const data = await this.get<APIResponse<Result[]>>(
-				`/results?${params.toString()}`,
-			);
+			const data = await this.get<APIResponse<Result[]>>(route);
 			return (data?.data ?? []) as Result[];
 		} catch (err) {
 			log.error("Failed to fetch results:", err);
@@ -274,7 +306,6 @@ class Monkey {
 	async getLastResult(): Promise<LastResult> {
 		try {
 			const data = await this.get<APIResponse<LastResult>>("/results/last");
-			log.debug("Last result", data);
 			return (data?.data ?? {}) as LastResult;
 		} catch (err) {
 			log.error("Failed to fetch last result:", err);

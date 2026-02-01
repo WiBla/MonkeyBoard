@@ -33,12 +33,16 @@ export default {
 			isPB.setName("ispb").setDescription("Est-ce un PB?")
 		),
 	async execute(interaction: ChatInputCommandInteraction) {
+		await interaction.reply({
+			flags: MessageFlags.Ephemeral,
+			content: "Travail en cours...",
+		});
+
 		const userId = interaction.user.id;
 
 		// ? We could let users add scores to themselves but we would still require a screenshot as proof
 		if (!isUserDev(userId)) {
-			await interaction.reply({
-				flags: MessageFlags.Ephemeral,
+			await interaction.editReply({
 				content: "Vous n'êtes pas autorisé à utiliser cette commande.",
 			});
 			return;
@@ -49,9 +53,8 @@ export default {
 		let user: User;
 
 		if (!author) {
-			return interaction.reply({
+			return interaction.editReply({
 				content: "Impossible de récupérer l'auteur du score",
-				flags: MessageFlags.Ephemeral,
 			});
 		}
 
@@ -74,17 +77,15 @@ export default {
 		const isPB = interaction.options.getBoolean("ispb") ?? false;
 
 		if ([wpm, acc, language, isPB].includes(null)) {
-			return interaction.reply({
+			return interaction.editReply({
 				content: "Il manque des paramètres obligatoires",
-				flags: MessageFlags.Ephemeral,
 			});
 		}
 
 		DB.addManualResult(user, wpm!, acc!, language!, isPB!);
 
-		return interaction.reply({
+		return interaction.editReply({
 			content: `Score enregistré.`,
-			flags: MessageFlags.Ephemeral,
 		});
 	},
 } as Command;

@@ -2,9 +2,9 @@ import { Database } from "@db/sqlite";
 import { User } from "../types/models.d.ts";
 import { Logger } from "./Logger.ts";
 import Monkey from "./Monkey.ts";
-import { getMonthName, getStartOfMonthTimestamp, isProd } from "./utils.ts";
+import { getMonthBounds, getMonthName, isProd, MonthOffset } from "./utils.ts";
 
-const log = new Logger({ name: "DB", level: isProd ? "INFO" : "DEBUG" });
+const log = new Logger({ name: "DB", level: isProd ? "WARN" : "DEBUG" });
 
 class DB {
 	private db: Database;
@@ -128,7 +128,6 @@ class DB {
 
 			for (const colname in columns) {
 				const exists = realCols.some((c) => c.name === colname);
-				// log.debug({ realCols, colname, exists });
 				if (!exists) {
 					log.info(`Adding missing column '${colname}' to '${table}'`);
 					this.db.exec(
@@ -172,19 +171,20 @@ class DB {
 
 	async registerUser(
 		discordId: string,
+		username: string | null,
 		apekey: string,
 	): Promise<boolean> {
 		try {
 			const user = new Monkey(apekey, discordId);
-			await user.completeProfileFromAPI();
+			await user.completeProfileFromAPI(username);
 
 			const results = await user.getResults();
 			this.addResults(results);
 
-			log.success("User registered successfully");
+			log.success(`${username} registered successfully`);
 			return true;
 		} catch (err) {
-			log.error("Error while registering user", err);
+			log.error(`Error while registering ${username}`, err);
 			throw err;
 		}
 	}
@@ -467,18 +467,16 @@ class DB {
 						punctuation: result?.punctuation ?? 0,
 						isPb: result?.isPb ?? 0,
 					});
-					// log.log(`Done saving result ${i} of ${results.length}`);
 				} catch (err) {
 					log.error(
 						`Error while inserting result ${i} of ${results.length} : `,
 						err,
 					);
-					// log.debug(insertStmt);
 					break;
 				}
 			}
 
-			log.success(`${results.length - 1} Result(s) added`);
+			log.success(`${results.length} Result(s) added`);
 		}
 	}
 
@@ -532,15 +530,17 @@ class DB {
 	}
 
 	getLeaderboard(
-		options?: { uid?: string; month?: number },
+		options?: { uid?: string; offset?: MonthOffset },
 	): LeaderboardMapped[] {
 		{
 			const { uid } = options ?? {};
-			const month = options?.month || new Date().getMonth();
+			const offset = options?.offset !== undefined
+				? options.offset
+				: MonthOffset.Now;
 
 			using stmt = this.db.prepare(`
 WITH filtered_results AS (
-  SELECT 
+  SELECT
     r.id,
     r.uid,
     r.wpm,
@@ -562,11 +562,11 @@ WITH filtered_results AS (
     )
     AND r.lazyMode = 0
     AND (
-      r.timestamp >= :start AND r.timestamp < :end
+      r.timestamp >= :startMs AND r.timestamp < :endMs
     )
 ),
 ranked_results AS (
-  SELECT 
+  SELECT
     fr.*,
     ROW_NUMBER() OVER (
       PARTITION BY fr.uid, fr.language
@@ -595,21 +595,16 @@ WHERE rr.rn = 1 AND u.dnt = 0
 GROUP BY rr.id, u.name, u.discordId, rr.wpm, rr.acc, rr.language, rr.isPb, rr.timestamp
 ORDER BY rr.language DESC, rr.wpm DESC;`);
 
-			const start = Math.floor(
-				getStartOfMonthTimestamp(month) / 1000,
-			);
-			const end = Math.floor(
-				getStartOfMonthTimestamp(month + 1) / 1000,
-			);
+			const { startMs, endMs } = getMonthBounds(offset);
 
 			log.debug(
 				`Fetching leaderboard for ${
 					uid ? this.getNameFromUID(uid) : "all users"
-				} for the month ${getMonthName(month)}`,
+				} for the month ${getMonthName(offset)}`,
 			);
 
 			// Necessary because SQLite will check if each parameter is in the query and error if not
-			const bind = uid ? { start, end, uid } : { start, end };
+			const bind = uid ? { startMs, endMs, uid } : { startMs, endMs };
 
 			return stmt.all<LeaderboardMapped>(bind).map((row) => ({
 				...row,
@@ -630,10 +625,12 @@ ORDER BY rr.language DESC, rr.wpm DESC;`);
 		}
 	}
 
-	getBestWPM(options?: { uid?: string; month?: number }): BestWPM[] {
+	getBestWPM(options?: { uid?: string; offset?: MonthOffset }): BestWPM[] {
 		{
 			const { uid } = options ?? {};
-			const month = options?.month || new Date().getMonth() - 1;
+			const offset = options?.offset !== undefined
+				? options!.offset
+				: MonthOffset.Now;
 
 			using stmt = this.db.prepare(
 				`SELECT
@@ -650,45 +647,45 @@ WHERE
 	)
 	AND r.lazyMode = 0
 	AND (
-		r.timestamp >= :start AND r.timestamp < :end
+		r.timestamp >= :startMs AND r.timestamp < :endMs
 	)
 	group by language`,
 			);
 
-			const start = Math.floor(
-				getStartOfMonthTimestamp(month) / 1000,
-			);
-			const end = Math.floor(
-				getStartOfMonthTimestamp(month + 1) / 1000,
-			);
+			const { startMs, endMs } = getMonthBounds(offset);
 
 			log.debug(
 				`Fetching best WPM for ${
 					uid ? this.getNameFromUID(uid) : "all users"
-				} for the month ${getMonthName(month)}`,
+				} for the month ${getMonthName(offset)}`,
 			);
 
 			// Necessary because SQLite will check if each parameter is in the query and error if not
-			const bind = uid ? { start, end, uid } : { start, end };
+			const bind = uid ? { startMs, endMs, uid } : { startMs, endMs };
 
 			return stmt.all<BestWPM>(bind);
 		}
 	}
 
 	getLeaderboardWithBestWPM(
-		options?: { uid?: string; month?: number },
+		options?: { uid?: string; offset?: MonthOffset },
 	): LeaderboardWithBestWPM[] {
-		const leaderboard = this.getLeaderboard(options);
-		const compareMonth = options?.month || undefined;
+		const offset = options?.offset !== undefined
+			? options!.offset
+			: MonthOffset.Now;
+
+		const leaderboard = this.getLeaderboard({
+			uid: options?.uid,
+			offset: offset === MonthOffset.Compare
+				? MonthOffset.Previous
+				: MonthOffset.Now,
+		});
 
 		if (!leaderboard || leaderboard.length === 0) return [];
 
 		const uids = [...new Set(leaderboard.map((entry) => entry.uid))];
 		const PBs = uids.map((uid) => {
-			const lastPB = this.getBestWPM({
-				uid,
-				month: compareMonth ? compareMonth - 1 : undefined,
-			});
+			const lastPB = this.getBestWPM({ uid, offset });
 			return { uid, lastPB };
 		});
 

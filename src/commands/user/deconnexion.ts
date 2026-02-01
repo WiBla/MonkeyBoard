@@ -11,7 +11,6 @@ import {
 import { Command } from "../../types/client.ts";
 import DB from "../../utils/DB.ts";
 import Logger from "../../utils/Logger.ts";
-import { isUserDev } from "../../utils/utils.ts";
 
 const log = new Logger({ name: "deconnexion" });
 
@@ -36,12 +35,11 @@ export default {
 } as Command;
 
 export async function confirm(interaction: ButtonInteraction) {
-	let userId = interaction.user.id;
-
-	if (isUserDev(userId)) {
-		log.info("Dev user detected, using test ID");
-		userId = "287702750366662658";
-	}
+	const userId = interaction.user.id;
+	// if (isUserDev(userId)) {
+	// 	log.info("Dev user detected, using test ID");
+	// 	userId = "287702750366662658";
+	// }
 
 	await interaction.deferReply({
 		flags: MessageFlags.Ephemeral,

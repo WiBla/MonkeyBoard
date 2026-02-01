@@ -86,7 +86,11 @@ _Considérez cette clé comme un **mot de passe**, elle me donne accès à votre
 		});
 
 		try {
-			const success = await DB.registerUser(userId, ApeKey);
+			const success = await DB.registerUser(
+				userId,
+				interaction.user.globalName,
+				ApeKey,
+			);
 			if (!success) {
 				await interaction.editReply("Vérifiez que votre clé soit valide");
 			} else {

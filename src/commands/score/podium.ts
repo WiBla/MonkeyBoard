@@ -5,13 +5,16 @@ import {
 } from "discord.js";
 import { Command } from "../../types/client.ts";
 import DB from "../../utils/DB.ts";
-import { formatLeaderboard } from "../../utils/utils.ts";
+import {
+	formatLeaderboard,
+	getMonthName,
+	MonthOffset,
+} from "../../utils/utils.ts";
 
 export default {
 	data: new SlashCommandBuilder()
 		.setName("podium")
 		.setDescription("Génère un aperçu du podium")
-		// ? add params to toggle acc, pb, diff
 		.addBooleanOption((showTags) =>
 			showTags.setName("tags").setDescription("Voir les tags")
 		)
@@ -24,11 +27,15 @@ export default {
 			showPB.setName("pb").setDescription("Voir si c'est un PB")
 		),
 	async execute(interaction: ChatInputCommandInteraction) {
+		await interaction.reply({
+			flags: MessageFlags.Ephemeral,
+			content: "Travail en cours...",
+		});
+
 		const leaderboard = DB.getLeaderboardWithBestWPM();
 
 		if (!leaderboard || leaderboard.length === 0) {
-			await interaction.reply({
-				flags: MessageFlags.Ephemeral,
+			await interaction.editReply({
 				content: "Aucun score trouvé",
 			});
 			return;
@@ -38,11 +45,14 @@ export default {
 		const showDiff = interaction.options.getBoolean("diff") ?? false;
 		const showPB = interaction.options.getBoolean("pb") ?? true;
 
-		await interaction.reply({
-			flags: MessageFlags.Ephemeral,
+		await interaction.editReply({
 			content: formatLeaderboard(
 				leaderboard,
-				{ type: "temporary", visibility: { showTags, showDiff, showPB } },
+				{
+					type: "temporary",
+					monthName: getMonthName(MonthOffset.Now),
+					visibility: { showTags, showDiff, showPB },
+				},
 			),
 			allowedMentions: {
 				parse: [],

@@ -5,19 +5,27 @@ import {
 } from "discord.js";
 import { Command } from "../../types/client.ts";
 import DB from "../../utils/DB.ts";
-import { formatLeaderboard } from "../../utils/utils.ts";
+import {
+	formatLeaderboard,
+	getMonthName,
+	MonthOffset,
+} from "../../utils/utils.ts";
 
 export default {
 	data: new SlashCommandBuilder()
 		.setName("voirmonscore")
 		.setDescription("Récupère votre score du mois"),
 	async execute(interaction: ChatInputCommandInteraction) {
+		await interaction.reply({
+			flags: MessageFlags.Ephemeral,
+			content: "Travail en cours...",
+		});
+
 		const userId = interaction.user.id;
 
 		const user = DB.getUserByDiscordId(userId);
 		if (!user) {
-			await interaction.reply({
-				flags: MessageFlags.Ephemeral,
+			await interaction.editReply({
 				content:
 					"Vous n'avez pas encore lié votre ApeKey. Utilisez la commande \`/connexion\` pour le faire.",
 			});
@@ -25,8 +33,7 @@ export default {
 		}
 
 		if (user.dnt) {
-			await interaction.reply({
-				flags: MessageFlags.Ephemeral,
+			await interaction.editReply({
 				content:
 					"Vous avez quitté la compétition. Utilisez \`/rejoindre\` si vous souhaitez à nouveau participer !",
 			});
@@ -36,17 +43,16 @@ export default {
 		const leaderboard = DB.getLeaderboardWithBestWPM({ uid: user.uid });
 
 		if (!leaderboard || leaderboard.length === 0) {
-			await interaction.reply({
-				flags: MessageFlags.Ephemeral,
+			await interaction.editReply({
 				content: "Aucun score trouvé",
 			});
 			return;
 		}
 
-		await interaction.reply({
-			flags: MessageFlags.Ephemeral,
+		await interaction.editReply({
 			content: formatLeaderboard(leaderboard, {
 				type: "personal",
+				monthName: getMonthName(MonthOffset.Now),
 				visibility: { showDiff: true, showPB: true, showTags: true },
 			}),
 		});

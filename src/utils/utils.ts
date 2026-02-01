@@ -4,20 +4,77 @@ export function isUserDev(discordId: string): boolean {
 	return discordId === "106511773581991936";
 }
 
-export function getStartOfMonthTimestamp(month?: number): number {
-	const now = new Date();
-	const year = now.getFullYear();
-
-	const target = month !== undefined
-		? new Date(year, month, 1)
-		: new Date(year, now.getMonth(), 1);
-
-	return target.getTime();
+export enum MonthOffset {
+	Now = 0,
+	Previous = -1,
+	Compare = -2,
 }
 
-export function getMonthName(month: number): string {
-	const monthName = new Date(0, month).toLocaleString("fr", { month: "long" });
+export function isOffsetOOB(value: number): asserts value is MonthOffset {
+	if (!Object.values(MonthOffset).includes(value)) {
+		throw new Error(`Invalid MonthOffset: ${value}`);
+	}
+}
+
+export function getMonthBounds(
+	offset: MonthOffset = MonthOffset.Now,
+): { startMs: number; endMs: number } {
+	isOffsetOOB(offset);
+
+	const now = new Date();
+
+	// Move to the target month (Date handles year rollover automatically)
+	const targetMonth = new Date(
+		now.getFullYear(),
+		now.getMonth() + offset,
+		1,
+	);
+
+	// First millisecond of the month
+	const start = new Date(
+		targetMonth.getFullYear(),
+		targetMonth.getMonth(),
+		1,
+		0,
+		0,
+		0,
+		0,
+	);
+
+	// Last millisecond of the month:
+	// first millisecond of next month minus 1
+	const end = new Date(
+		targetMonth.getFullYear(),
+		targetMonth.getMonth() + 1,
+		1,
+		0,
+		0,
+		0,
+		0,
+	);
+	end.setMilliseconds(end.getMilliseconds() - 1);
+
+	return {
+		startMs: Math.floor(start.getTime() / 1000),
+		endMs: Math.floor(end.getTime() / 1000),
+	};
+}
+
+export function getMonthName(offset: MonthOffset): string {
+	isOffsetOOB(offset);
+
+	const { startMs } = getMonthBounds(offset);
+
+	const monthName = new Date(startMs * 1000).toLocaleString("fr", {
+		month: "long",
+	});
 	return monthName.charAt(0).toUpperCase() + monthName.slice(1);
+}
+
+export function timestampToReadableDate(ts: number | undefined): string {
+	if (ts === undefined) return "inconnue";
+	return new Date(ts.toString().length > 10 ? ts : ts * 1000)
+		.toLocaleDateString("FR-fr");
 }
 
 function formatLastPB(wpm: number, lastPB: number | null): string {
@@ -50,7 +107,7 @@ const languages: { title: string; filter: string | null }[] = [
 
 interface formatLeaderboardOptions {
 	type: "personal" | "temporary" | "monthly";
-	month?: number;
+	monthName: string;
 	visibility?: { showTags: boolean; showDiff: boolean; showPB: boolean };
 }
 
@@ -63,9 +120,8 @@ export function formatLeaderboard(
 	}
 
 	let content = "";
-	const { type } = opts;
-	let { month, visibility } = opts;
-	month ??= new Date().getMonth();
+	const { type, monthName } = opts;
+	let { visibility } = opts;
 	visibility = {
 		...opts.visibility,
 		showTags: opts?.visibility?.showTags ?? true,
@@ -76,20 +132,16 @@ export function formatLeaderboard(
 	// Header
 	switch (type) {
 		case "personal":
-			content = `## Vos résultats ${getMonthName(month)} ${
-				new Date().getFullYear()
-			}\n`;
+			content = `## Vos résultats ${monthName} ${new Date().getFullYear()}\n`;
 			break;
 		case "temporary":
-			content = `## Classement temporaire ${getMonthName(month)} ${
+			content = `## Classement temporaire ${monthName} ${
 				new Date().getFullYear()
 			}\n`;
 			break;
 		case "monthly":
 		default:
-			content = `# 🏆 Résultats ${getMonthName(month)} ${
-				new Date().getFullYear()
-			} 🏆\n`;
+			content = `# 🏆 Résultats ${monthName} ${new Date().getFullYear()} 🏆\n`;
 			break;
 	}
 
@@ -97,7 +149,7 @@ export function formatLeaderboard(
 		entry: LeaderboardMapped | LeaderboardWithBestWPM,
 		index: number,
 	) {
-		let { id, discordId, wpm, /*acc,*/ isPb, tag_names } = entry;
+		let { /*id,*/ discordId, wpm, /*acc,*/ isPb, tag_names } = entry;
 		const lastPB = (entry as LeaderboardWithBestWPM).lastPB ?? null;
 
 		++index;
@@ -124,13 +176,13 @@ export function formatLeaderboard(
 		tag_names = tag_names ? ` (${tag_names})` : "";
 		const lastPBStr = formatLastPB(wpm, lastPB);
 
-		const isManual = type !== "monthly" && id.includes("manual")
-			? " (⚠️ score manuel)"
-			: "";
+		// const isManual = type !== "monthly" && id.includes("manual")
+		// 	? " (⚠️ score manuel)"
+		// 	: "";
 
 		content += `${prefix}${wpm} wpm ${visibility!.showPB ? pbStr : ""}${
 			visibility!.showDiff ? lastPBStr : ""
-		}${visibility!.showTags ? tag_names : ""}${isManual}\n`;
+		}${visibility!.showTags ? tag_names : ""}\n`;
 	}
 
 	for (const language of languages) {
