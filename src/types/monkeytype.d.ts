@@ -70,12 +70,6 @@ type LastResult = {
 	isPb?: boolean;
 };
 
-type Tags = {
-	_id: string;
-	name: string;
-	// personalBests
-};
-
 type APIResponse<T = unknown> = {
 	message: string;
 	data?: T; // Only for 200 status

@@ -308,7 +308,7 @@ class DB {
 	// #endregion Users
 
 	// #region Tags
-	addTags(tags: Tag[]) {
+	addTags(tags: Tags[]) {
 		{
 			using insertStmt = this.db.prepare(`
 				INSERT INTO tags (
@@ -326,6 +326,60 @@ class DB {
 			}
 
 			log.success(`${tags.length} Tag(s) added`);
+		}
+	}
+
+	getTags(uid: string): DBTags[] {
+		{
+			using stmt = this.db.prepare(
+				`SELECT * FROM tags WHERE uid = ? ORDER BY name`,
+			);
+
+			return stmt.all<DBTags>(uid);
+		}
+	}
+
+	getTagBestWPM(tagId: string): { wpm: number; timestamp: number } | undefined {
+		{
+			using stmt = this.db.prepare(
+				"SELECT wpm, timestamp FROM results WHERE tags LIKE '%'||?||'%' ORDER BY WPM DESC LIMIT 1",
+			);
+
+			return stmt.get(tagId);
+		}
+	}
+
+	getTagBestFRWPM(
+		tagId: string,
+	): { wpm: number; timestamp: number } | undefined {
+		{
+			using stmt = this.db.prepare(
+				"SELECT wpm, timestamp FROM results WHERE tags LIKE '%'||?||'%' and acc >= 95.5 and mode = 'words' and language = 'french' and mode2 = '50' and lazyMode = 0 ORDER BY WPM DESC LIMIT 1",
+			);
+
+			return stmt.get(tagId);
+		}
+	}
+
+	getTagBestENWPM(
+		tagId: string,
+	): { wpm: number; timestamp: number } | undefined {
+		{
+			using stmt = this.db.prepare(
+				"SELECT wpm, timestamp FROM results WHERE tags LIKE '%'||?||'%' and acc >= 95.5 and mode = 'words' and language IS null and mode2 = '50' and lazyMode = 0 ORDER BY WPM DESC LIMIT 1",
+			);
+
+			return stmt.get(tagId);
+		}
+	}
+
+	countResultsWithTag(tagId: string): { total: number } | undefined {
+		{
+			using stmt = this.db.prepare(
+				"SELECT COUNT(*) AS total FROM results WHERE tags LIKE '%'||?||'%'",
+			);
+
+			return stmt.get(tagId);
 		}
 	}
 
@@ -466,6 +520,14 @@ class DB {
 			}
 
 			log.success(`Manual result added`);
+		}
+	}
+
+	getResults(uid: string): Result[] {
+		{
+			using stmt = this.db.prepare(`SELECT * FROM results WHERE uid = :uid`);
+
+			return stmt.all<Result>(uid);
 		}
 	}
 

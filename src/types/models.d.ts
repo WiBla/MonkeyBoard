@@ -5,8 +5,8 @@ type Result = {
 	rawWpm: number;
 	charStats: string;
 	acc: number;
-	mode: string;
-	mode2: string;
+	mode: "time" | "words" | "quote" | "custom" | "zen";
+	mode2: number | "custom" | "zen";
 	quoteLength?: number;
 	timestamp: number;
 	restartCount: number;
@@ -27,7 +27,44 @@ type Result = {
 	isPb?: boolean;
 };
 
-type Tag = { _id: string; name: string; uid: string };
+type TagResult = {
+	acc: number;
+	consistency: number;
+	difficulty: "normal" | "expert" | "master";
+	lazyMode: boolean;
+	language: string;
+	punctuation: boolean;
+	raw: number;
+	wpm: number;
+	numbers: boolean;
+	timestamp: number;
+};
+
+type PersonalBests = {
+	time: {
+		15?: TagResult[];
+		30?: TagResult[];
+		60?: TagResult[];
+	};
+	words: {
+		10?: TagResult[];
+		25?: TagResult[];
+		50?: TagResult[];
+		100?: TagResult[];
+	};
+	quote: Record<PropertyKey, never>;
+	zen: { zen: TagResult[] };
+	custom: { custom: TagResult[] };
+};
+
+type Tags = {
+	_id: string;
+	name: string;
+	uid: string;
+	personalBests: PersonalBests;
+};
+
+type DBTags = Omit<Tags, "_id" | "personalBests"> & { id: string };
 
 type User = {
 	uid: string;

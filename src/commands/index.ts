@@ -7,6 +7,7 @@ import toutmaj from "./score/toutmaj.ts";
 import voirmonscore from "./score/voirmonscore.ts";
 import connexion from "./user/connexion.ts";
 import deconnexion from "./user/deconnexion.ts";
+import monprofile from "./user/monprofile.ts";
 import quitter from "./user/quitter.ts";
 import rejoindre from "./user/rejoindre.ts";
 
@@ -19,6 +20,7 @@ export default [
 	voirmonscore,
 	connexion,
 	deconnexion,
+	monprofile,
 	quitter,
 	rejoindre,
 ] as Command[];
