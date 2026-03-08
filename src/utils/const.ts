@@ -1,0 +1,2 @@
+export const PROD_BOT_ID = "1417277586618323006";
+export const DEV_ID = "106511773581991936";

@@ -189,6 +189,21 @@ class DB {
 		}
 	}
 
+	makeUserReal(oldId: string, newId: string) {
+		if (oldId === undefined || newId === undefined) {
+			throw new Error("Argument null exception");
+		}
+
+		// Update manual results to have new (real) ID
+		this.db.exec(`UPDATE results SET uid = :newId WHERE uid = :oldId`, {
+			oldId,
+			newId,
+		});
+
+		// Delete manual profile
+		this.db.exec("DELETE FROM users WHERE uid = ?", oldId);
+	}
+
 	getAllUsers(ignoreDNT = false): User[] {
 		const stmt = `SELECT * from users where ${
 			ignoreDNT ? "1" : "dnt = 0"

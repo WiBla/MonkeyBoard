@@ -1,7 +1,9 @@
-export const isProd = Deno.env.get("APP_ID") === "1417277586618323006";
+import { DEV_ID, PROD_BOT_ID } from "./const.ts";
+
+export const isProd = Deno.env.get("APP_ID") === PROD_BOT_ID;
 
 export function isUserDev(discordId: string): boolean {
-	return discordId === "106511773581991936";
+	return discordId === DEV_ID;
 }
 
 export enum MonthOffset {

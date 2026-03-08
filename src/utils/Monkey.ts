@@ -206,7 +206,7 @@ class Monkey {
 			log.success(`Saved ${tags.length} tag(s) for ${this.name}`);
 
 			// Tags also contains scores with best wpm
-			DB.addResults(this.TagsToResults(tags));
+			// DB.addResults(this.TagsToResults(tags));
 
 			return tags;
 		} catch (err) {
@@ -215,6 +215,7 @@ class Monkey {
 		}
 	}
 
+	// TODO : fix results being added multiple times
 	TagsToResults(tags: Tags[]): Result[] {
 		const results: Result[] = [];
 

@@ -12,7 +12,6 @@ import {
 	InactiveApeKeyError,
 	InvalidApeKeyError,
 } from "../../utils/errors.ts";
-import { isUserDev } from "../../utils/utils.ts";
 
 export default {
 	data: new SlashCommandBuilder()
@@ -24,22 +23,38 @@ export default {
 			).setRequired(false)
 		),
 	async execute(interaction: ChatInputCommandInteraction) {
+		await interaction.reply({
+			components: [
+				new TextDisplayBuilder().setContent("Travail en cours..."),
+			],
+			flags: MessageFlags.Ephemeral | MessageFlags.IsComponentsV2,
+		});
+
 		const userId = interaction.user.id;
 		const ApeKey = interaction.options.getString("apekey");
 
 		if (!userId) {
 			console.error("[APP] Missing userId in request");
-			return await interaction.reply({
-				content: "Impossible d'identifier l'utilisateur.",
-				flags: MessageFlags.Ephemeral,
+			return await interaction.editReply({
+				components: [
+					new TextDisplayBuilder().setContent(
+						"Impossible d'identifier l'utilisateur.",
+					),
+				],
 			});
 		}
 
+		let user = DB.getUserByDiscordId(userId);
+		const userHasManualResults = user.uid.indexOf("manual-") == 0;
+
 		// If ApeKey provided → try to register
-		if (!isUserDev(userId) && DB.userByDiscordIdExists(userId)) {
-			return await interaction.reply({
-				content: "Vous avez déjà lié votre compte !",
-				flags: MessageFlags.Ephemeral,
+		if (DB.userByDiscordIdExists(userId) && !userHasManualResults) {
+			return await interaction.editReply({
+				components: [
+					new TextDisplayBuilder().setContent(
+						"Vous avez déjà lié votre compte !",
+					),
+				],
 			});
 		}
 
@@ -71,7 +86,7 @@ export default {
 _Considérez cette clé comme un **mot de passe**, elle me donne accès à votre compte Monkeytype, mais soyez rassuré : en dehors de voir vos résultats, je ne peux rien faire avec qui puisse compromettre votre profil._`,
 			);
 
-			return await interaction.reply({
+			return await interaction.editReply({
 				components: [
 					text1,
 					gallery,
@@ -81,32 +96,68 @@ _Considérez cette clé comme un **mot de passe**, elle me donne accès à votre
 			});
 		}
 
-		await interaction.deferReply({
-			flags: MessageFlags.Ephemeral,
-		});
-
 		try {
+			// Register user
 			const success = await DB.registerUser(
 				userId,
 				interaction.user.globalName,
 				ApeKey,
 			);
+
 			if (!success) {
-				await interaction.editReply("Vérifiez que votre clé soit valide");
-			} else {
-				await interaction.editReply("Votre compte a bien été enregistré !");
+				return await interaction.editReply({
+					components: [
+						new TextDisplayBuilder().setContent(
+							"Vérifiez que votre clé soit valide",
+						),
+					],
+				});
 			}
+
+			if (userHasManualResults) {
+				const oldId = user.uid;
+				// Get the ID of the user we just created
+				user = DB.getUserByToken(ApeKey);
+
+				DB.makeUserReal(oldId, user.uid);
+			}
+
+			await interaction.editReply({
+				components: [
+					new TextDisplayBuilder().setContent(
+						"Votre compte a bien été enregistré !",
+					),
+				],
+			});
 		} catch (err) {
 			if (err instanceof InactiveApeKeyError) {
-				await interaction.editReply(
-					"Votre clé est inactive. Activez-la sur Monkeytype avant de réessayer.",
-				);
+				await interaction.editReply({
+					components: [
+						new TextDisplayBuilder().setContent(
+							"Votre clé est inactive. Activez-la sur Monkeytype avant de réessayer.",
+						),
+					],
+				});
 			} else if (err instanceof InvalidApeKeyError) {
-				await interaction.editReply("Votre clé est invalide.");
+				await interaction.editReply({
+					components: [
+						new TextDisplayBuilder().setContent("Votre clé est invalide."),
+					],
+				});
 			} else if (err instanceof APIError) {
-				await interaction.editReply(`Erreur API : ${err.message}`);
+				await interaction.editReply({
+					components: [
+						new TextDisplayBuilder().setContent(`Erreur API : ${err.message}`),
+					],
+				});
 			} else {
-				await interaction.editReply("Une erreur inconnue est survenue.");
+				await interaction.editReply({
+					components: [
+						new TextDisplayBuilder().setContent(
+							"Une erreur inconnue est survenue.",
+						),
+					],
+				});
 			}
 			console.error("[Register] Error while trying to register user", err);
 		}
